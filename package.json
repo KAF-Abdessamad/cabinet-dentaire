@@ -1,0 +1,17 @@
+{
+    "name": "dentistpro",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+        "dev:backend": "cd backend && php artisan serve",
+        "dev:frontend": "cd frontend && npm run dev",
+        "build": "cd frontend && npm run build",
+        "install:all": "cd backend && composer install && cd ../frontend && npm install",
+        "migrate": "cd backend && php artisan migrate",
+        "seed": "cd backend && php artisan db:seed"
+    },
+    "devDependencies": {
+        "concurrently": "^9.2.1"
+    }
+}
