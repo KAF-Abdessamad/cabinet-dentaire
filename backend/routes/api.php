@@ -18,9 +18,18 @@ Route::post('/admin/login', [AuthController::class, 'storeAdmin'])->middleware('
 Route::post('/register', [PatientRegistrationController::class, 'store'])->middleware(['web', 'guest']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    // Current authenticated user
+    Route::post('/logout', [AuthController::class, 'destroy'])->middleware('web');
+
+    // Current authenticated user (rôle inclus pour la SPA patient)
     Route::get('/user', function (Request $request) {
-        return $request->user();
+        $user = $request->user()->loadMissing('roles');
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->roles->first()?->name,
+        ];
     });
 
     // Patient-specific routes (for patient role)
@@ -28,6 +37,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/patient/stats', [PatientDashboardController::class, 'stats']);
         Route::get('/patient/appointments', [PatientDashboardController::class, 'appointments']);
         Route::get('/patient/medical-records', [PatientDashboardController::class, 'medicalRecords']);
+        Route::get('/patient/dentists', [PatientDashboardController::class, 'dentists']);
+        Route::get('/patient/invoices', [PatientDashboardController::class, 'invoices']);
+        Route::post('/patient/appointments', [PatientDashboardController::class, 'storeAppointment']);
     });
 
     // Admin/Dentist routes

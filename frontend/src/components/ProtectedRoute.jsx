@@ -7,9 +7,9 @@ const ProtectedRoute = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Check if user is authenticated via API
-        api.get('/api/user')
-            .then(response => {
+        api
+            .get('/api/user')
+            .then((response) => {
                 setUser(response.data);
                 setLoading(false);
             })
@@ -21,18 +21,21 @@ const ProtectedRoute = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center bg-dentist-soft">
                 <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p className="mt-4 text-slate-600">Chargement...</p>
+                    <div className="w-14 h-14 border-4 border-dentist-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                    <p className="mt-4 text-slate-600 font-medium">Chargement...</p>
                 </div>
             </div>
         );
     }
 
     if (!user) {
-        // Redirect to patient login page (SPA)
-        window.location.href = '/login';
+        return <Navigate to="/login/auth" replace />;
+    }
+
+    if (user.role && user.role !== 'patient') {
+        window.location.href = '/admin/dashboard';
         return null;
     }
 

@@ -23,10 +23,17 @@ export default {
                     900: '#0c4a6e',
                 },
                 dentist: {
+                    primary: '#38bdf8',
+                    dark: '#0284c7',
+                    deeper: '#0369a1',
+                    secondary: '#22d3ee',
+                    muted: '#7dd3fc',
+                    soft: '#f0f9ff',
+                    surface: '#e0f2fe',
                     blue: '#0891b2',
                     teal: '#0d9488',
                     green: '#059669',
-                    soft: '#f8fafc',
+                    light: '#e0f2fe',
                 }
             },
             fontFamily: {

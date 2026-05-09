@@ -1,227 +1,563 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+    User,
+    Stethoscope,
+    CalendarDays,
+    History,
+    Wallet,
+    CalendarPlus,
+    CheckCircle2,
+    AlertCircle,
+    Loader2,
+} from 'lucide-react';
 import api from '../api.js';
 
+const tabs = [
+    { id: 'infos', label: 'Mes informations', Icon: User },
+    { id: 'sante', label: 'Santé', Icon: Stethoscope },
+    { id: 'rdv', label: 'Rendez-vous', Icon: CalendarDays },
+    { id: 'historique', label: 'Historique', Icon: History },
+    { id: 'paiements', label: 'Paiements', Icon: Wallet },
+];
+
+const statusAppointmentFr = {
+    pending: 'En attente',
+    confirmed: 'Confirmé',
+    completed: 'Terminé',
+    cancelled: 'Annulé',
+};
+
+const statusInvoiceFr = {
+    unpaid: 'Impayée',
+    partially_paid: 'Partiellement payée',
+    paid: 'Payée',
+};
+
+const todayStr = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+};
+
+function formatDateFrench(iso) {
+    if (!iso) return '—';
+    const [y, m, dd] = String(iso).split(/\D/).filter(Boolean);
+    if (!y || !m || !dd) return iso;
+    return `${dd}/${m}/${y}`;
+}
+
 const PatientDashboard = () => {
+    const [activeTab, setActiveTab] = useState('infos');
     const [stats, setStats] = useState(null);
-    const [appointments, setAppointments] = useState([]);
-    const [patient, setPatient] = useState(null);
+    const [appointmentsUp, setAppointmentsUp] = useState([]);
+    const [patientBundle, setPatientBundle] = useState(null);
+    const [dentists, setDentists] = useState([]);
+    const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const [bookForm, setBookForm] = useState({
+        user_id: '',
+        appointment_date: todayStr(),
+        start_time: '09:00',
+        end_time: '09:30',
+        reason: '',
+    });
+    const [booking, setBooking] = useState(false);
+    const [bookMsg, setBookMsg] = useState({ type: '', text: '' });
+
+    const fetchPatientData = useCallback(async () => {
+        try {
+            const [statsRes, apptRes, medRes, denRes, invRes] = await Promise.all([
+                api.get('/api/patient/stats'),
+                api.get('/api/patient/appointments'),
+                api.get('/api/patient/medical-records'),
+                api.get('/api/patient/dentists'),
+                api.get('/api/patient/invoices'),
+            ]);
+            setStats(statsRes.data);
+            setAppointmentsUp(apptRes.data || []);
+            setPatientBundle(medRes.data || null);
+            const list = denRes.data || [];
+            setDentists(list);
+            setInvoices(invRes.data || []);
+            setBookForm((f) =>
+                list.length && !f.user_id ? { ...f, user_id: String(list[0].id) } : f,
+            );
+        } catch (e) {
+            console.error('Patient dashboard:', e);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
         fetchPatientData();
-    }, []);
+    }, [fetchPatientData]);
 
-    const fetchPatientData = async () => {
+    const patient = patientBundle?.patient;
+    const historyAppointments = useMemo(() => {
+        const all = patientBundle?.appointments || [];
+        const today = todayStr();
+        return all.filter((a) => {
+            if (!a?.appointment_date) return false;
+            const d = String(a.appointment_date).slice(0, 10);
+            return d < today || ['completed', 'cancelled'].includes(a.status);
+        });
+    }, [patientBundle]);
+
+    const handleBookSubmit = async (e) => {
+        e.preventDefault();
+        setBookMsg({ type: '', text: '' });
+        setBooking(true);
         try {
-            // Fetch patient stats
-            const statsResponse = await api.get('/api/patient/stats');
-            setStats(statsResponse.data);
-
-            // Fetch upcoming appointments
-            const appointmentsResponse = await api.get('/api/patient/appointments');
-            setAppointments(appointmentsResponse.data);
-
-            // Fetch full patient profile + history bundle
-            const medicalRecordsResponse = await api.get('/api/patient/medical-records');
-            setPatient(medicalRecordsResponse.data.patient);
-        } catch (error) {
-            console.error('Error fetching patient data:', error);
+            await api.post('/api/patient/appointments', {
+                user_id: Number(bookForm.user_id),
+                appointment_date: bookForm.appointment_date,
+                start_time: bookForm.start_time.length === 5 ? `${bookForm.start_time}:00` : bookForm.start_time,
+                end_time: bookForm.end_time.length === 5 ? `${bookForm.end_time}:00` : bookForm.end_time,
+                reason: bookForm.reason || null,
+            });
+            setBookMsg({ type: 'ok', text: 'Demande de rendez-vous enregistrée.' });
+            fetchPatientData();
+        } catch (err) {
+            const msg =
+                err.response?.data?.message ||
+                err.response?.data?.error ||
+                'Impossible d’enregistrer ce rendez-vous.';
+            setBookMsg({ type: 'err', text: msg });
         } finally {
-            setLoading(false);
+            setBooking(false);
         }
     };
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-dentist-primary"></div>
+            <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 text-dentist-deeper">
+                <Loader2 className="h-10 w-10 animate-spin text-dentist-primary" strokeWidth={2} />
+                <p className="text-sm text-slate-600">Chargement de votre espace…</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
-            {/* Welcome Section */}
-            <div className="bg-gradient-to-r from-dentist-primary to-dentist-dark text-white rounded-2xl p-6 shadow-lg">
-                <h1 className="text-3xl font-bold mb-2">
+        <div className="space-y-8 animate-fade-in">
+            {/* Hero */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-dentist-primary via-dentist-secondary to-dentist-dark text-white shadow-xl shadow-dentist-primary/25 px-8 py-10 transition-transform hover:scale-[1.005] duration-500">
+                <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight relative">
                     Bienvenue{patient?.first_name ? `, ${patient.first_name}` : ''}
                 </h1>
-                <p className="text-dentist-light opacity-90">
-                    Suivez votre santé dentaire et vos rendez-vous
+                <p className="mt-3 text-white/90 max-w-xl relative">
+                    Retrouvez vos informations, vos rendez-vous et vos paiements en un seul endroit.
                 </p>
-            </div>
-
-            {/* Patient Profile */}
-            {patient && (
-                <div className="bg-white rounded-xl shadow-md p-6">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">Mes informations</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div><span className="text-gray-500">Nom</span><div className="font-medium">{patient.first_name} {patient.last_name}</div></div>
-                        <div><span className="text-gray-500">Email</span><div className="font-medium">{patient.email || '—'}</div></div>
-                        <div><span className="text-gray-500">Téléphone</span><div className="font-medium">{patient.phone || '—'}</div></div>
-                        <div><span className="text-gray-500">Date de naissance</span><div className="font-medium">{patient.birth_date || '—'}</div></div>
-                        <div><span className="text-gray-500">Sexe</span><div className="font-medium">{patient.gender || '—'}</div></div>
-                        <div><span className="text-gray-500">CIN</span><div className="font-medium">{patient.cin || '—'}</div></div>
-                        <div><span className="text-gray-500">Groupe sanguin</span><div className="font-medium">{patient.blood_group || '—'}</div></div>
-                        <div className="md:col-span-2"><span className="text-gray-500">Adresse</span><div className="font-medium">{patient.address || '—'}</div></div>
-                        <div className="md:col-span-2"><span className="text-gray-500">Allergies</span><div className="font-medium whitespace-pre-wrap">{patient.allergies || '—'}</div></div>
-                        <div className="md:col-span-2"><span className="text-gray-500">Antécédents médicaux</span><div className="font-medium whitespace-pre-wrap">{patient.medical_history || '—'}</div></div>
-                    </div>
-                </div>
-            )}
-
-            {/* Stats Cards */}
-            {stats && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white rounded-xl p-6 shadow-md border-l-4 border-dentist-primary">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-600 text-sm">Rendez-vous à venir</p>
-                                <p className="text-3xl font-bold text-dentist-primary mt-2">
-                                    {stats.upcoming_appointments}
-                                </p>
-                            </div>
-                            <div className="bg-dentist-soft p-3 rounded-full">
-                                <svg className="w-6 h-6 text-dentist-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                            </div>
+                {stats && (
+                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 relative">
+                        <div className="rounded-2xl bg-white/15 backdrop-blur-sm px-5 py-4 border border-white/20">
+                            <p className="text-sm text-white/80">Rendez-vous à venir</p>
+                            <p className="text-3xl font-bold mt-1">{stats.upcoming_appointments}</p>
                         </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-6 shadow-md border-l-4 border-dentist-secondary">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-600 text-sm">Traitements en cours</p>
-                                <p className="text-3xl font-bold text-dentist-secondary mt-2">
-                                    {stats.active_treatments}
-                                </p>
-                            </div>
-                            <div className="bg-dentist-soft p-3 rounded-full">
-                                <svg className="w-6 h-6 text-dentist-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                </svg>
-                            </div>
+                        <div className="rounded-2xl bg-white/15 backdrop-blur-sm px-5 py-4 border border-white/20">
+                            <p className="text-sm text-white/80">Actes prévus liés aux RDV</p>
+                            <p className="text-3xl font-bold mt-1">{stats.active_treatments}</p>
                         </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-6 shadow-md border-l-4 border-green-500">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-600 text-sm">Dossier complet</p>
-                                <p className="text-lg font-bold text-green-500 mt-2">
-                                    {stats.profile_complete ? 'Oui' : 'Non'}
-                                </p>
-                            </div>
-                            <div className="bg-dentist-soft p-3 rounded-full">
-                                <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
+                        <div className="rounded-2xl bg-white/15 backdrop-blur-sm px-5 py-4 border border-white/20">
+                            <p className="text-sm text-white/80">Fiche santé complète</p>
+                            <p className="text-xl font-bold mt-1 flex items-center gap-2">
+                                {stats.profile_complete ? (
+                                    <>
+                                        <CheckCircle2 className="h-6 w-6" strokeWidth={2} />
+                                        Oui
+                                    </>
+                                ) : (
+                                    <>
+                                        <AlertCircle className="h-6 w-6" strokeWidth={2} />
+                                        À compléter
+                                    </>
+                                )}
+                            </p>
                         </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Upcoming Appointments */}
-            <div className="bg-white rounded-xl shadow-md p-6">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-gray-800">Prochains rendez-vous</h2>
-                    <Link
-                        to="/patient/appointments"
-                        className="text-dentist-primary hover:underline font-medium"
-                    >
-                        Voir tout
-                    </Link>
-                </div>
-
-                {appointments.length > 0 ? (
-                    <div className="space-y-4">
-                        {appointments.map((appointment) => (
-                            <div
-                                key={appointment.id}
-                                className="flex items-center justify-between p-4 bg-dentist-soft rounded-lg"
-                            >
-                                <div className="flex items-center space-x-4">
-                                    <div className="bg-dentist-primary text-white p-3 rounded-lg">
-                                        <p className="text-sm font-bold">
-                                            {new Date(appointment.appointment_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
-                                        </p>
-                                        <p className="text-xs">{appointment.start_time}</p>
-                                    </div>
-                                    <div>
-                                        <p className="font-medium text-gray-800">
-                                            {appointment.dentist?.name || 'Dr. à définir'}
-                                        </p>
-                                        <p className="text-sm text-gray-600">
-                                            {appointment.treatments?.map(t => t.name).join(', ') || 'Consultation'}
-                                        </p>
-                                    </div>
-                                </div>
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                    appointment.status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                                    appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-gray-100 text-gray-700'
-                                }`}>
-                                    {appointment.status === 'confirmed' ? 'Confirmé' :
-                                     appointment.status === 'pending' ? 'En attente' :
-                                     appointment.status}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-8 text-gray-500">
-                        <p>Aucun rendez-vous programmé</p>
-                        <Link
-                            to="/patient/appointments/new"
-                            className="inline-block mt-4 bg-dentist-primary text-white px-6 py-2 rounded-lg hover:bg-dentist-dark transition-colors"
-                        >
-                            Prendre rendez-vous
-                        </Link>
                     </div>
                 )}
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Link
-                    to="/patient/appointments/new"
-                    className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
-                >
-                    <div className="flex items-center space-x-4">
-                        <div className="bg-dentist-primary text-white p-4 rounded-lg">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 className="font-bold text-gray-800">Prendre rendez-vous</h3>
-                            <p className="text-sm text-gray-600">Planifier une nouvelle consultation</p>
-                        </div>
-                    </div>
-                </Link>
+            {/* Tabs */}
+            <div className="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-dentist-surface/90 border border-dentist-muted/50 shadow-inner">
+                {tabs.map(({ id, label, Icon }) => {
+                    const active = activeTab === id;
+                    return (
+                        <button
+                            key={id}
+                            type="button"
+                            onClick={() => setActiveTab(id)}
+                            className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
+                                active
+                                    ? 'bg-white text-dentist-deeper shadow-md scale-[1.02]'
+                                    : 'text-slate-600 hover:bg-white/60 hover:text-dentist-deeper'
+                            }`}
+                        >
+                            <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
+                            {label}
+                        </button>
+                    );
+                })}
+            </div>
 
-                <Link
-                    to="/patient/medical-records"
-                    className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
-                >
-                    <div className="flex items-center space-x-4">
-                        <div className="bg-dentist-secondary text-white p-4 rounded-lg">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
+            {/* Panels */}
+            <div className="animate-tab rounded-3xl bg-white shadow-lg shadow-dentist-primary/10 border border-dentist-soft p-8 min-h-[280px]">
+                {activeTab === 'infos' && patient && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                        <h2 className="md:col-span-2 text-xl font-bold text-dentist-deeper flex items-center gap-2 mb-2">
+                            <User className="h-6 w-6 text-dentist-primary" strokeWidth={2} />
+                            Identité & contact
+                        </h2>
+                        <Field label="Prénom" value={patient.first_name} />
+                        <Field label="Nom" value={patient.last_name} />
+                        <Field label="Email" value={patient.email} />
+                        <Field label="Téléphone" value={patient.phone} />
+                        <Field
+                            label="Date de naissance"
+                            value={
+                                patient.birth_date
+                                    ? formatDateFrench(String(patient.birth_date).slice(0, 10))
+                                    : null
+                            }
+                        />
+                        <Field label="Sexe" value={patient.gender} />
+                        <Field label="CIN" value={patient.cin} />
+                        <Field label="Adresse" value={patient.address} className="md:col-span-2" />
+                    </div>
+                )}
+
+                {activeTab === 'sante' && patient && (
+                    <div className="space-y-6 text-sm">
+                        <h2 className="text-xl font-bold text-dentist-deeper flex items-center gap-2">
+                            <Stethoscope className="h-6 w-6 text-dentist-primary" strokeWidth={2} />
+                            Informations de santé
+                        </h2>
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <CardSoft title="Groupe sanguin" value={patient.blood_group} />
+                            <CardSoft title="Allergies" value={patient.allergies} multiline />
                         </div>
+                        <CardSoft
+                            title="Antécédents médicaux"
+                            value={patient.medical_history}
+                            multiline
+                            className="md:col-span-2"
+                        />
+                        {patientBundle?.medical_records?.length > 0 && (
+                            <div>
+                                <h3 className="text-sm font-bold text-dentist-deeper mb-3">
+                                    Compte-rendus enregistrés au cabinet
+                                </h3>
+                                <ul className="space-y-3">
+                                    {patientBundle.medical_records.map((rec) => (
+                                        <li
+                                            key={rec.id}
+                                            className="rounded-2xl border border-dentist-muted/60 bg-white p-4"
+                                        >
+                                            <p className="text-xs text-slate-500">
+                                                {formatDateFrench(rec.record_date)} •{' '}
+                                                {rec.dentist?.name || 'Professionnel'}
+                                            </p>
+                                            {rec.diagnosis && (
+                                                <p className="mt-2 text-slate-800 font-medium">{rec.diagnosis}</p>
+                                            )}
+                                            {rec.notes && (
+                                                <p className="mt-2 text-slate-600 whitespace-pre-wrap text-xs">
+                                                    {rec.notes}
+                                                </p>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'rdv' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                         <div>
-                            <h3 className="font-bold text-gray-800">Dossier médical</h3>
-                            <p className="text-sm text-gray-600">Voir votre historique de santé</p>
+                            <h2 className="text-xl font-bold text-dentist-deeper flex items-center gap-2 mb-4">
+                                <CalendarDays className="h-6 w-6 text-dentist-primary" strokeWidth={2} />
+                                Prochains rendez-vous
+                            </h2>
+                            {appointmentsUp.length > 0 ? (
+                                <ul className="space-y-3">
+                                    {appointmentsUp.map((appointment) => (
+                                        <li
+                                            key={appointment.id}
+                                            className="rounded-2xl border border-dentist-muted/60 bg-dentist-soft/50 p-4 flex gap-4 items-start hover:shadow-md transition-shadow duration-300"
+                                        >
+                                            <span className="flex flex-col items-center justify-center rounded-xl bg-gradient-to-br from-dentist-primary to-dentist-dark text-white px-4 py-2 text-center min-w-[4.5rem]">
+                                                <span className="text-xs uppercase font-semibold opacity-90">
+                                                    {formatDateFrench(appointment.appointment_date)}
+                                                </span>
+                                                <span className="text-sm font-bold">
+                                                    {appointment.start_time?.slice(0, 5)}
+                                                </span>
+                                            </span>
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-slate-800">
+                                                    {appointment.dentist?.name || 'Dentiste'}
+                                                </p>
+                                                <p className="text-slate-600 text-xs mt-1">
+                                                    {appointment.treatments?.map((t) => t.name).join(', ') ||
+                                                        appointment.reason ||
+                                                        'Consultation'}
+                                                </p>
+                                                <span
+                                                    className={`inline-block mt-2 text-xs font-medium px-2.5 py-1 rounded-full ${
+                                                        appointment.status === 'confirmed'
+                                                            ? 'bg-emerald-100 text-emerald-800'
+                                                            : appointment.status === 'pending'
+                                                              ? 'bg-amber-100 text-amber-800'
+                                                              : 'bg-slate-100 text-slate-700'
+                                                    }`}
+                                                >
+                                                    {statusAppointmentFr[appointment.status] ||
+                                                        appointment.status}
+                                                </span>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-slate-500 py-8">Aucun rendez-vous à venir.</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <h2 className="text-xl font-bold text-dentist-deeper flex items-center gap-2 mb-4">
+                                <CalendarPlus className="h-6 w-6 text-dentist-primary" strokeWidth={2} />
+                                Nouveau rendez-vous
+                            </h2>
+                            {bookMsg.text && (
+                                <div
+                                    className={`mb-4 px-4 py-3 rounded-xl text-sm font-medium border ${
+                                        bookMsg.type === 'ok'
+                                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                            : 'bg-red-50 text-red-700 border-red-200'
+                                    }`}
+                                >
+                                    {bookMsg.text}
+                                </div>
+                            )}
+                            <form onSubmit={handleBookSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-2">
+                                        Dentiste
+                                    </label>
+                                    <select
+                                        required
+                                        className="w-full rounded-xl border border-dentist-muted bg-dentist-soft/50 px-4 py-3 text-sm focus:ring-2 focus:ring-dentist-primary focus:border-dentist-primary transition"
+                                        value={bookForm.user_id}
+                                        onChange={(e) =>
+                                            setBookForm((f) => ({ ...f, user_id: e.target.value }))
+                                        }
+                                    >
+                                        <option value="">Choisir un dentiste</option>
+                                        {dentists.map((d) => (
+                                            <option key={d.id} value={d.id}>
+                                                {d.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-600 mb-2">
+                                            Date
+                                        </label>
+                                        <input
+                                            type="date"
+                                            required
+                                            min={todayStr()}
+                                            className="w-full rounded-xl border border-dentist-muted px-4 py-3 text-sm"
+                                            value={bookForm.appointment_date}
+                                            onChange={(e) =>
+                                                setBookForm((f) => ({
+                                                    ...f,
+                                                    appointment_date: e.target.value,
+                                                }))
+                                            }
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-600 mb-2">
+                                            Début
+                                        </label>
+                                        <input
+                                            type="time"
+                                            required
+                                            className="w-full rounded-xl border border-dentist-muted px-4 py-3 text-sm"
+                                            value={bookForm.start_time}
+                                            onChange={(e) =>
+                                                setBookForm((f) => ({ ...f, start_time: e.target.value }))
+                                            }
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-600 mb-2">
+                                            Fin
+                                        </label>
+                                        <input
+                                            type="time"
+                                            required
+                                            className="w-full rounded-xl border border-dentist-muted px-4 py-3 text-sm"
+                                            value={bookForm.end_time}
+                                            onChange={(e) =>
+                                                setBookForm((f) => ({ ...f, end_time: e.target.value }))
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-2">
+                                        Motif (optionnel)
+                                    </label>
+                                    <textarea
+                                        rows={3}
+                                        className="w-full rounded-xl border border-dentist-muted px-4 py-3 text-sm"
+                                        placeholder="Ex. consultation, détartrage..."
+                                        value={bookForm.reason}
+                                        onChange={(e) =>
+                                            setBookForm((f) => ({ ...f, reason: e.target.value }))
+                                        }
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={booking}
+                                    className="w-full rounded-xl bg-gradient-to-r from-dentist-primary to-dentist-dark text-white py-3.5 font-semibold shadow-lg shadow-dentist-primary/30 hover:opacity-95 active:scale-[0.98] transition flex items-center justify-center gap-2 disabled:opacity-60"
+                                >
+                                    {booking ? (
+                                        <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} />
+                                    ) : null}
+                                    Demander ce rendez-vous
+                                </button>
+                            </form>
                         </div>
                     </div>
-                </Link>
+                )}
+
+                {activeTab === 'historique' && (
+                    <div>
+                        <h2 className="text-xl font-bold text-dentist-deeper flex items-center gap-2 mb-6">
+                            <History className="h-6 w-6 text-dentist-primary" strokeWidth={2} />
+                            Historique des consultations
+                        </h2>
+                        {historyAppointments.length === 0 ? (
+                            <p className="text-slate-500">Aucun historique disponible pour le moment.</p>
+                        ) : (
+                            <ul className="space-y-3">
+                                {historyAppointments.map((a) => (
+                                    <li
+                                        key={`h-${a.id}`}
+                                        className="rounded-2xl border border-slate-100 p-5 bg-slate-50/80 hover:bg-white hover:border-dentist-muted transition-all duration-300"
+                                    >
+                                        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                            <span className="font-semibold text-dentist-deeper">
+                                                {formatDateFrench(a.appointment_date)} •{' '}
+                                                {a.start_time?.slice(0, 5)}
+                                            </span>
+                                            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white border border-dentist-muted">
+                                                {statusAppointmentFr[a.status] || a.status}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-slate-700">{a.dentist?.name}</p>
+                                        {a.reason && (
+                                            <p className="text-xs text-slate-500 mt-2">{a.reason}</p>
+                                        )}
+                                        {a.treatments?.length > 0 && (
+                                            <p className="text-xs text-slate-600 mt-3">
+                                                Actes associés :{' '}
+                                                {a.treatments.map((t) => t.name).join(', ') || '—'}
+                                            </p>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'paiements' && (
+                    <div>
+                        <h2 className="text-xl font-bold text-dentist-deeper flex items-center gap-2 mb-6">
+                            <Wallet className="h-6 w-6 text-dentist-primary" strokeWidth={2} />
+                            Factures et paiements
+                        </h2>
+                        {invoices.length === 0 ? (
+                            <p className="text-slate-500">Aucune facture pour l’instant.</p>
+                        ) : (
+                            <div className="space-y-4">
+                                {invoices.map((inv) => (
+                                    <div
+                                        key={inv.id}
+                                        className="rounded-2xl border border-dentist-muted/70 p-6 bg-gradient-to-br from-white to-dentist-soft/40 hover:shadow-md transition-shadow duration-300"
+                                    >
+                                        <div className="flex flex-wrap justify-between gap-4">
+                                            <div>
+                                                <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">
+                                                    Facture du {formatDateFrench(inv.invoice_date)}
+                                                </p>
+                                                <p className="text-2xl font-bold text-dentist-deeper mt-1">
+                                                    {Number(inv.total_amount).toFixed(2)} MAD
+                                                </p>
+                                                <span className="inline-block mt-2 text-xs font-medium px-3 py-1 rounded-full bg-dentist-surface border border-dentist-muted">
+                                                    {statusInvoiceFr[inv.status] || inv.status}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {inv.payments?.length > 0 && (
+                                            <ul className="mt-4 pt-4 border-t border-dentist-muted/50 space-y-2 text-sm">
+                                                {inv.payments.map((p) => (
+                                                    <li
+                                                        key={p.id}
+                                                        className="flex justify-between text-slate-700"
+                                                    >
+                                                        <span>
+                                                            Paiement du {formatDateFrench(p.payment_date)}
+                                                        </span>
+                                                        <span className="font-medium">
+                                                            {Number(p.amount).toFixed(2)} MAD
+                                                        </span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
 };
+
+function Field({ label, value, className = '' }) {
+    return (
+        <div className={className}>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span>
+            <p className="mt-1 text-slate-900 font-medium">{value || '—'}</p>
+        </div>
+    );
+}
+
+function CardSoft({ title, value, multiline, className = '' }) {
+    return (
+        <div
+            className={`rounded-2xl border border-dentist-muted/60 bg-dentist-soft/40 p-5 ${className}`}
+        >
+            <h3 className="text-sm font-bold text-dentist-deeper mb-2">{title}</h3>
+            <p className={`text-slate-700 ${multiline ? 'whitespace-pre-wrap' : ''}`}>{value || '—'}</p>
+        </div>
+    );
+}
 
 export default PatientDashboard;
