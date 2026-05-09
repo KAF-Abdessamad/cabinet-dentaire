@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Header from './Header.jsx';
-import Dashboard from './Dashboard.jsx';
-import PatientList from './PatientList.jsx';
-import AppointmentCalendar from './AppointmentCalendar.jsx';
 import PatientDashboard from './PatientDashboard.jsx';
 import Login from './Login.jsx';
 import Register from './Register.jsx';
 import PatientPortal from './PatientPortal.jsx';
-import AdminLogin from './AdminLogin.jsx';
 import LandingPage from './LandingPage.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
 import api from '../api.js';
@@ -42,7 +38,6 @@ const App = () => {
                 <Route path="/login" element={<PatientPortal />} />
                 <Route path="/login/auth" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/admin/login" element={<AdminLogin />} />
                 
                 {/* Patient routes */}
                 <Route element={<ProtectedRoute />}>
@@ -50,18 +45,6 @@ const App = () => {
                         <Route path="/patient/dashboard" element={<PatientDashboard />} />
                     </Route>
                 </Route>
-                
-                {/* Admin/Dentist routes */}
-                <Route element={<ProtectedRoute />}>
-                    <Route element={<AppLayout user={user} />}>
-                        <Route path="/app" element={<Dashboard />} />
-                        <Route path="/app/patients" element={<PatientList />} />
-                        <Route path="/app/appointments" element={<AppointmentCalendar />} />
-                    </Route>
-                </Route>
-                
-                {/* Admin dashboard redirect to Laravel */}
-                <Route path="/admin/dashboard" element={<Navigate to="http://localhost:8000/admin/dashboard" replace />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </BrowserRouter>

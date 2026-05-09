@@ -11,6 +11,11 @@ class Patient extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $casts = [
+        'birth_date' => 'date',
+        'deleted_at' => 'datetime',
+    ];
+
     protected $fillable = [
         'user_id',
         'first_name',

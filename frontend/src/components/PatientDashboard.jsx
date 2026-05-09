@@ -5,6 +5,7 @@ import api from '../api.js';
 const PatientDashboard = () => {
     const [stats, setStats] = useState(null);
     const [appointments, setAppointments] = useState([]);
+    const [patient, setPatient] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -20,6 +21,10 @@ const PatientDashboard = () => {
             // Fetch upcoming appointments
             const appointmentsResponse = await api.get('/api/patient/appointments');
             setAppointments(appointmentsResponse.data);
+
+            // Fetch full patient profile + history bundle
+            const medicalRecordsResponse = await api.get('/api/patient/medical-records');
+            setPatient(medicalRecordsResponse.data.patient);
         } catch (error) {
             console.error('Error fetching patient data:', error);
         } finally {
@@ -39,11 +44,32 @@ const PatientDashboard = () => {
         <div className="space-y-6">
             {/* Welcome Section */}
             <div className="bg-gradient-to-r from-dentist-primary to-dentist-dark text-white rounded-2xl p-6 shadow-lg">
-                <h1 className="text-3xl font-bold mb-2">Bienvenue, Patient</h1>
+                <h1 className="text-3xl font-bold mb-2">
+                    Bienvenue{patient?.first_name ? `, ${patient.first_name}` : ''}
+                </h1>
                 <p className="text-dentist-light opacity-90">
                     Suivez votre santé dentaire et vos rendez-vous
                 </p>
             </div>
+
+            {/* Patient Profile */}
+            {patient && (
+                <div className="bg-white rounded-xl shadow-md p-6">
+                    <h2 className="text-xl font-bold text-gray-800 mb-4">Mes informations</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div><span className="text-gray-500">Nom</span><div className="font-medium">{patient.first_name} {patient.last_name}</div></div>
+                        <div><span className="text-gray-500">Email</span><div className="font-medium">{patient.email || '—'}</div></div>
+                        <div><span className="text-gray-500">Téléphone</span><div className="font-medium">{patient.phone || '—'}</div></div>
+                        <div><span className="text-gray-500">Date de naissance</span><div className="font-medium">{patient.birth_date || '—'}</div></div>
+                        <div><span className="text-gray-500">Sexe</span><div className="font-medium">{patient.gender || '—'}</div></div>
+                        <div><span className="text-gray-500">CIN</span><div className="font-medium">{patient.cin || '—'}</div></div>
+                        <div><span className="text-gray-500">Groupe sanguin</span><div className="font-medium">{patient.blood_group || '—'}</div></div>
+                        <div className="md:col-span-2"><span className="text-gray-500">Adresse</span><div className="font-medium">{patient.address || '—'}</div></div>
+                        <div className="md:col-span-2"><span className="text-gray-500">Allergies</span><div className="font-medium whitespace-pre-wrap">{patient.allergies || '—'}</div></div>
+                        <div className="md:col-span-2"><span className="text-gray-500">Antécédents médicaux</span><div className="font-medium whitespace-pre-wrap">{patient.medical_history || '—'}</div></div>
+                    </div>
+                </div>
+            )}
 
             {/* Stats Cards */}
             {stats && (

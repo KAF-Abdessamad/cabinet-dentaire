@@ -10,12 +10,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Public API routes (no auth required)
-Route::post('/login', [AuthController::class, 'store'])->middleware('guest');
+Route::post('/login', [AuthController::class, 'store'])->middleware(['web', 'guest']);
 Route::post('/admin/login', [AuthController::class, 'storeAdmin'])->middleware('force.json')->withoutMiddleware([
     \Illuminate\Auth\Middleware\Authenticate::class,
     \Illuminate\Auth\Middleware\RedirectIfAuthenticated::class,
 ]);
-Route::post('/register', [PatientRegistrationController::class, 'store'])->middleware('guest');
+Route::post('/register', [PatientRegistrationController::class, 'store'])->middleware(['web', 'guest']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     // Current authenticated user

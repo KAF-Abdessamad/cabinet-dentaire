@@ -14,11 +14,35 @@ use Illuminate\Validation\Rule;
 
 class PatientRegistrationController extends Controller
 {
+    private const PATIENT_EMAIL_DOMAIN = 'patient.com';
+
+    private static function normalizeForEmail(string $value): string
+    {
+        $value = trim($value);
+        $value = mb_strtolower($value, 'UTF-8');
+        // Remove spaces and common separators.
+        $value = preg_replace('/[\s\-_]+/u', '', $value) ?? $value;
+        // Keep only letters and digits.
+        $value = preg_replace('/[^\p{L}\p{N}]+/u', '', $value) ?? $value;
+        return $value;
+    }
+
+    private static function buildPatientEmail(string $firstName, string $lastName): string
+    {
+        $local = self::normalizeForEmail($firstName) . self::normalizeForEmail($lastName);
+        return $local . '@' . self::PATIENT_EMAIL_DOMAIN;
+    }
+
     /**
      * Register a new patient account.
      */
     public function store(Request $request)
     {
+        $expectedEmail = self::buildPatientEmail(
+            (string) $request->input('first_name', ''),
+            (string) $request->input('last_name', '')
+        );
+
         $existingUser = User::where('email', $request->input('email'))->first();
 
         $validator = Validator::make($request->all(), [
@@ -29,6 +53,7 @@ class PatientRegistrationController extends Controller
                 'string',
                 'email',
                 'max:255',
+                'ends_with:@' . self::PATIENT_EMAIL_DOMAIN,
                 Rule::unique('users', 'email')->ignore($existingUser?->id),
             ],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
@@ -42,8 +67,16 @@ class PatientRegistrationController extends Controller
             'medical_history' => ['nullable', 'string'],
         ], [
             'email.unique' => "Cet email est déjà utilisé. Connectez‑vous ou utilisez un autre email.",
+            'email.ends_with' => "L'email doit être au format nomprenom@patient.com.",
             'password.confirmed' => "La confirmation du mot de passe ne correspond pas.",
         ]);
+
+        $validator->after(function ($validator) use ($request, $expectedEmail) {
+            $email = (string) $request->input('email', '');
+            if ($email !== '' && $expectedEmail !== '' && mb_strtolower($email, 'UTF-8') !== mb_strtolower($expectedEmail, 'UTF-8')) {
+                $validator->errors()->add('email', "Email invalide. Utilisez: {$expectedEmail}");
+            }
+        });
 
         if ($validator->fails()) {
             \Log::warning('Patient registration validation failed', [
@@ -114,14 +147,10 @@ class PatientRegistrationController extends Controller
             ], 422);
         }
 
-        // Log the user in
-        Auth::login($user);
-        $request->session()->regenerate();
-
         return response()->json([
             'message' => 'Compte patient créé avec succès',
-            'user' => $user,
-            'patient' => $patient,
+            'login_url' => '/login/auth',
+            'expected_email' => $expectedEmail,
         ], 201);
     }
 }

@@ -31,7 +31,7 @@ const ProtectedRoute = () => {
     }
 
     if (!user) {
-        // Redirect to Laravel login page
+        // Redirect to patient login page (SPA)
         window.location.href = '/login';
         return null;
     }

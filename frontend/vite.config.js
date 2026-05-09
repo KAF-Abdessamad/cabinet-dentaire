@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
     plugins: [react()],
+    // SPA patient served at domain root in prod (Laravel).
     server: {
         port: 5173,
         proxy: {
@@ -10,11 +11,8 @@ export default defineConfig({
                 target: 'http://localhost:8000',
                 changeOrigin: true,
             },
-            '/login': {
-                target: 'http://localhost:8000',
-                changeOrigin: true,
-            },
-            '/logout': {
+            // Allow navigating to Laravel admin while developing on Vite.
+            '/admin': {
                 target: 'http://localhost:8000',
                 changeOrigin: true,
             },
@@ -25,6 +23,9 @@ export default defineConfig({
         },
     },
     build: {
-        outDir: 'dist',
+        // Build output is served by Laravel from backend/public
+        outDir: '../backend/public',
+        assetsDir: 'patient-assets',
+        emptyOutDir: false,
     },
 });

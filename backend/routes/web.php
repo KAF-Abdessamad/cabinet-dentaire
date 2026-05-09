@@ -2,22 +2,23 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\File;
 
 Route::get('/', function () {
-    return redirect('http://localhost:5173');
+    $indexPath = public_path('index.html');
+
+    if (File::exists($indexPath)) {
+        return response()->file($indexPath);
+    }
+
+    return response()->make(
+        '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Patient SPA manquant</title></head><body style="font-family:system-ui,Segoe UI,Roboto,Arial;max-width:760px;margin:40px auto;padding:0 16px;line-height:1.5"><h1>Build React manquant</h1><p>Le fichier <code>public/index.html</code> n\'existe pas encore. Lance la compilation du frontend.</p><pre style="background:#f6f8fa;padding:12px;border-radius:8px;overflow:auto">cd frontend\nnpm run build</pre><p>Puis recharge cette page.</p></body></html>',
+        500,
+        ['Content-Type' => 'text/html; charset=UTF-8']
+    );
 });
 
-// Patient Portal Routes (Public)
-Route::get('/patient/register', [\App\Http\Controllers\PatientPortalController::class, 'showRegistrationForm'])->name('patient.register');
-Route::post('/patient/register', [\App\Http\Controllers\PatientPortalController::class, 'register']);
-
-// Patient Dashboard Routes (Protected)
-Route::middleware(['auth', 'role:patient'])->prefix('patient')->group(function () {
-    Route::get('/dashboard', [\App\Http\Controllers\PatientPortalController::class, 'dashboard'])->name('patient.dashboard');
-    Route::get('/book', [\App\Http\Controllers\PatientPortalController::class, 'showBookingForm'])->name('patient.book');
-    Route::post('/book', [\App\Http\Controllers\PatientPortalController::class, 'bookAppointment']);
-    Route::patch('/appointments/{appointment}/cancel', [\App\Http\Controllers\PatientPortalController::class, 'cancelAppointment'])->name('patient.appointment.cancel');
-});
+// NOTE: Patient portal Blade routes are intentionally removed in Option B (React = patient).
 
 Route::get('/dashboard', function () {
     return redirect('/app');
@@ -56,13 +57,15 @@ Route::get('/design-system', function () {
     return view('demo-design-system');
 })->middleware(['auth', 'role:admin']);
 
-// React SPA Route - redirect to frontend
-Route::get('/app', function () {
-    return redirect('http://localhost:5173');
-})->middleware(['auth'])->name('app');
-
-Route::get('/app/{any}', function () {
-    return redirect('http://localhost:5173/' . request()->path());
-})->middleware(['auth'])->where('any', '.*');
-
 require __DIR__.'/auth.php';
+
+// Catch-all for patient SPA (must come last, excludes admin + api + sanctum)
+Route::get('/{any}', function () {
+    $indexPath = public_path('index.html');
+
+    if (File::exists($indexPath)) {
+        return response()->file($indexPath);
+    }
+
+    return abort(404);
+})->where('any', '^(?!admin($|/)|api($|/)|sanctum($|/)).*');

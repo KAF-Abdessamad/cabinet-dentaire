@@ -1,6 +1,16 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api.js';
+
+const normalizeForEmail = (value) =>
+    (value || '')
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/[\s\-_]+/g, '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, '');
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -22,6 +32,11 @@ const Register = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
+    const expectedEmail = useMemo(() => {
+        const local = `${normalizeForEmail(formData.first_name)}${normalizeForEmail(formData.last_name)}`;
+        return local ? `${local}@patient.com` : '@patient.com';
+    }, [formData.first_name, formData.last_name]);
+
     const handleChange = (e) => {
         setFormData({
             ...formData,
@@ -39,13 +54,14 @@ const Register = () => {
             await api.get('/sanctum/csrf-cookie');
             
             console.log('Registering patient...');
-            const response = await api.post('/api/register', formData);
+            const payload = { ...formData, email: expectedEmail };
+            const response = await api.post('/api/register', payload);
 
             console.log('Registration response:', response.data);
             
             if (response.status === 201) {
-                // Redirect to patient dashboard
-                navigate('/patient/dashboard');
+                // Redirect to login after successful registration
+                navigate('/login/auth', { replace: true });
             }
         } catch (err) {
             console.error('Registration error:', err);
@@ -134,12 +150,15 @@ const Register = () => {
                                 <input
                                     type="email"
                                     name="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
+                                    value={expectedEmail}
+                                    readOnly
                                     required
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
                                     placeholder="jean.dupont@email.com"
                                 />
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Email généré automatiquement: <span className="font-medium">{expectedEmail}</span>
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">

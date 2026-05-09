@@ -38,12 +38,12 @@ const LandingPage = () => {
                             >
                                 Espace Patient
                             </Link>
-                            <Link
-                                to="/admin/login"
+                            <a
+                                href="/admin/login"
                                 className="bg-white hover:bg-blue-50 text-blue-900 px-8 py-4 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg border-2 border-blue-900"
                             >
                                 Espace Cabinet
-                            </Link>
+                            </a>
                         </div>
                     </div>
                 </div>

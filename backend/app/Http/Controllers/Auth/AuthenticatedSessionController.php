@@ -28,7 +28,16 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // In this project, admin users land on the Blade admin dashboard.
+        // Patient users use the React SPA and should not be redirected to /dashboard (/app).
+        $user = Auth::user();
+        $role = $user?->roles?->first()?->name;
+
+        $default = in_array($role, ['admin', 'dentiste', 'assistant'], true)
+            ? route('admin.dashboard', absolute: false)
+            : '/';
+
+        return redirect()->intended($default);
     }
 
     /**

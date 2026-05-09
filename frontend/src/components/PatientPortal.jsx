@@ -31,7 +31,7 @@ const PatientPortal = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Login Card */}
                     <Link
-                        to="/login"
+                        to="/login/auth"
                         className="group bg-white rounded-2xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 border-transparent hover:border-blue-900"
                     >
                         <div className="flex flex-col items-center text-center">
