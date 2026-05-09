@@ -29,6 +29,8 @@ Route::middleware(['auth', 'role:admin|dentiste|assistant'])->prefix('admin')->g
     
     Route::resource('patients', \App\Http\Controllers\PatientController::class);
     Route::resource('appointments', \App\Http\Controllers\AppointmentController::class);
+    Route::get('appointments/{appointment}/propose', [\App\Http\Controllers\AppointmentController::class, 'propose'])->name('appointments.propose');
+    Route::post('appointments/{appointment}/propose', [\App\Http\Controllers\AppointmentController::class, 'storeProposal'])->name('appointments.store-proposal');
     Route::post('appointments/{appointment}/treatments', [\App\Http\Controllers\AppointmentController::class, 'addTreatment'])->name('appointments.add-treatment');
     Route::post('appointments/{appointment}/reminder', [\App\Http\Controllers\AppointmentController::class, 'sendReminder'])->name('appointments.reminder');
     

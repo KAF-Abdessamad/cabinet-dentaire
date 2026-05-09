@@ -39,7 +39,10 @@ Route::middleware(['auth:sanctum', 'web'])->group(function () {
         Route::get('/patient/medical-records', [PatientDashboardController::class, 'medicalRecords']);
         Route::get('/patient/dentists', [PatientDashboardController::class, 'dentists']);
         Route::get('/patient/invoices', [PatientDashboardController::class, 'invoices']);
+        Route::get('/patient/treatments', [PatientDashboardController::class, 'treatments']);
         Route::post('/patient/appointments', [PatientDashboardController::class, 'storeAppointment']);
+        Route::post('/patient/appointments/{appointment}/confirm', [PatientDashboardController::class, 'confirmAppointment']);
+        Route::post('/patient/appointments/{appointment}/reject', [PatientDashboardController::class, 'rejectAppointment']);
     });
 
     // Admin/Dentist routes

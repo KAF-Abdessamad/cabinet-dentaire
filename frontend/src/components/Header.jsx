@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import logo from '../img/logo-removebg-preview.png';
 
 const Header = ({ user }) => {
     const location = useLocation();
@@ -15,10 +16,8 @@ const Header = ({ user }) => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16 items-center">
                     <div className="flex items-center space-x-2">
-                        <div className="p-2 bg-medical-600 rounded-xl">
-                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-                            </svg>
+                        <div className="p-1 bg-white border border-slate-100 rounded-xl overflow-hidden w-10 h-10 flex items-center justify-center">
+                            <img src={logo} alt="Logo" className="w-full h-full object-contain" />
                         </div>
                         <span className="text-xl font-bold text-slate-800">
                             Dentist<span className="text-medical-600">Pro</span>

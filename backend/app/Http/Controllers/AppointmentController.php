@@ -24,20 +24,94 @@ class AppointmentController extends Controller
     {
         Gate::authorize('viewAny', Appointment::class);
 
-        $query = Appointment::with(['patient', 'dentist', 'treatments']);
+        $query = Appointment::with(['patient', 'dentist', 'treatment']);
 
-        if ($request->has('date')) {
+        if ($request->has('date') && $request->get('date')) {
             $query->whereDate('appointment_date', $request->get('date'));
-        } else {
-            $query->whereDate('appointment_date', Carbon::today());
         }
 
-        $appointments = $query->orderBy('start_time')->paginate(10);
-        $patients = Patient::all();
-        $dentists = User::all(); // Simplified for now
+        if ($request->has('status') && $request->get('status')) {
+            $query->where('status', $request->get('status'));
+        }
+
+        if ($request->has('patient') && $request->get('patient')) {
+            $query->whereHas('patient', function($q) use ($request) {
+                $q->where('first_name', 'like', '%' . $request->get('patient') . '%')
+                  ->orWhere('last_name', 'like', '%' . $request->get('patient') . '%');
+            });
+        }
+
+        $appointments = $query->orderByRaw("CASE WHEN status = 'requested' THEN 1 WHEN status = 'proposed' THEN 2 ELSE 3 END")
+            ->orderByDesc('created_at')
+            ->paginate(15);
+
+        $patients = Patient::orderBy('last_name')->get();
+        $dentists = User::role('dentiste')->get();
         $availableTreatments = Treatment::all();
 
         return view('appointments.index', compact('appointments', 'patients', 'dentists', 'availableTreatments'));
+    }
+
+    /**
+     * Affiche le formulaire pour proposer un créneau à un patient.
+     */
+    public function propose(Appointment $appointment): View
+    {
+        Gate::authorize('update', $appointment);
+        
+        $dentists = User::role('dentiste')->get();
+        $treatments = Treatment::all();
+        
+        return view('appointments.propose', compact('appointment', 'dentists', 'treatments'));
+    }
+
+    /**
+     * Enregistre la proposition de créneau.
+     */
+    public function storeProposal(Request $request, Appointment $appointment): RedirectResponse
+    {
+        Gate::authorize('update', $appointment);
+
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'appointment_date' => 'required|date|after_or_equal:today',
+            'start_time' => 'required',
+            'duration' => 'required|integer|min:15',
+            'admin_note' => 'nullable|string|max:1000',
+        ]);
+
+        $startTime = Carbon::parse($validated['appointment_date'] . ' ' . $validated['start_time']);
+        $endTime = (clone $startTime)->addMinutes($validated['duration']);
+
+        // Conflict check
+        $conflict = Appointment::where('user_id', $validated['user_id'])
+            ->where('appointment_date', $validated['appointment_date'])
+            ->where('id', '!=', $appointment->id)
+            ->where('status', 'confirmed')
+            ->where(function ($query) use ($startTime, $endTime) {
+                $query->whereBetween('start_time', [$startTime->format('H:i'), $endTime->format('H:i')])
+                      ->orWhereBetween('end_time', [$startTime->format('H:i'), $endTime->format('H:i')])
+                      ->orWhere(function ($q) use ($startTime, $endTime) {
+                          $q->where('start_time', '<=', $startTime->format('H:i'))
+                            ->where('end_time', '>=', $endTime->format('H:i'));
+                      });
+            })
+            ->exists();
+
+        if ($conflict) {
+            return back()->withErrors(['start_time' => 'Ce créneau est déjà occupé par un autre rendez-vous confirmé.'])->withInput();
+        }
+
+        $appointment->update([
+            'user_id' => $validated['user_id'],
+            'appointment_date' => $validated['appointment_date'],
+            'start_time' => $startTime->format('H:i'),
+            'end_time' => $endTime->format('H:i'),
+            'admin_note' => $validated['admin_note'],
+            'status' => 'proposed',
+        ]);
+
+        return redirect()->route('appointments.show', $appointment)->with('success', 'Proposition de créneau envoyée au patient.');
     }
 
     public function create(): View
@@ -77,27 +151,29 @@ class AppointmentController extends Controller
 
         $data = $request->validated();
 
-        $conflict = Appointment::where('user_id', $data['user_id'])
-            ->where('appointment_date', $data['appointment_date'])
-            ->where('status', '!=', 'cancelled')
-            ->where(function ($query) use ($data) {
-                $query->whereBetween('start_time', [$data['start_time'], $data['end_time']])
-                      ->orWhereBetween('end_time', [$data['start_time'], $data['end_time']])
-                      ->orWhere(function ($q) use ($data) {
-                          $q->where('start_time', '<=', $data['start_time'])
-                            ->where('end_time', '>=', $data['end_time']);
-                      });
-            })
-            ->exists();
+        if (isset($data['appointment_date']) && isset($data['start_time']) && isset($data['user_id'])) {
+            $conflict = Appointment::where('user_id', $data['user_id'])
+                ->where('appointment_date', $data['appointment_date'])
+                ->where('status', 'confirmed')
+                ->where(function ($query) use ($data) {
+                    $query->whereBetween('start_time', [$data['start_time'], $data['end_time']])
+                        ->orWhereBetween('end_time', [$data['start_time'], $data['end_time']])
+                        ->orWhere(function ($q) use ($data) {
+                            $q->where('start_time', '<=', $data['start_time'])
+                                ->where('end_time', '>=', $data['end_time']);
+                        });
+                })
+                ->exists();
 
-        if ($conflict) {
-            return back()->withErrors(['start_time' => 'Le dentiste n\'est pas disponible sur ce créneau horaire.'])->withInput();
+            if ($conflict) {
+                return back()->withErrors(['start_time' => 'Le dentiste n\'est pas disponible sur ce créneau horaire.'])->withInput();
+            }
         }
 
         $appointment = Appointment::create($data);
         $appointment->load('patient', 'dentist');
 
-        if ($appointment->patient->email) {
+        if ($appointment->patient->email && $appointment->status === 'confirmed') {
             Mail::to($appointment->patient->email)->send(new AppointmentConfirmationMail($appointment));
         }
 

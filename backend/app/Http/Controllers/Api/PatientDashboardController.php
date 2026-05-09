@@ -130,6 +130,18 @@ class PatientDashboardController extends Controller
     }
 
     /**
+     * Liste des traitements disponibles pour la demande de RDV.
+     */
+    public function treatments(): JsonResponse
+    {
+        $treatments = \App\Models\Treatment::select('id', 'name', 'price', 'description')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json($treatments);
+    }
+
+    /**
      * Crée un rendez-vous pour le patient connecté.
      */
     public function storeAppointment(Request $request): JsonResponse
@@ -142,51 +154,61 @@ class PatientDashboardController extends Controller
         }
 
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'appointment_date' => 'required|date|after_or_equal:today',
-            'start_time' => ['required', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
-            'end_time' => ['required', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
-            'reason' => 'nullable|string|max:500',
+            'treatment_id' => 'required|exists:treatments,id',
+            'patient_note' => 'nullable|string|max:1000',
         ]);
-
-        $isDentist = User::role('dentiste')->whereKey($validated['user_id'])->exists();
-        if (!$isDentist) {
-            return response()->json(['message' => 'Le professionnel sélectionné n’est pas un dentiste.'], 422);
-        }
-
-        if ($validated['end_time'] <= $validated['start_time']) {
-            return response()->json(['message' => 'L’heure de fin doit être après l’heure de début.'], 422);
-        }
-
-        $conflict = Appointment::where('user_id', $validated['user_id'])
-            ->where('appointment_date', $validated['appointment_date'])
-            ->where('status', '!=', 'cancelled')
-            ->where(function ($query) use ($validated) {
-                $query->whereBetween('start_time', [$validated['start_time'], $validated['end_time']])
-                    ->orWhereBetween('end_time', [$validated['start_time'], $validated['end_time']])
-                    ->orWhere(function ($q) use ($validated) {
-                        $q->where('start_time', '<=', $validated['start_time'])
-                            ->where('end_time', '>=', $validated['end_time']);
-                    });
-            })
-            ->exists();
-
-        if ($conflict) {
-            return response()->json(['message' => 'Ce créneau n’est pas disponible pour ce dentiste.'], 422);
-        }
 
         $data = [
             'patient_id' => $patient->id,
-            'user_id' => $validated['user_id'],
-            'appointment_date' => $validated['appointment_date'],
-            'start_time' => $validated['start_time'],
-            'end_time' => $validated['end_time'],
-            'reason' => $validated['reason'] ?? null,
-            'status' => 'pending',
+            'treatment_id' => $validated['treatment_id'],
+            'patient_note' => $validated['patient_note'] ?? null,
+            'status' => 'requested',
         ];
 
-        $appointment = Appointment::create($data)->load(['dentist']);
+        $appointment = Appointment::create($data)->load(['treatment']);
 
         return response()->json($appointment, 201);
+    }
+
+    /**
+     * Confirme une proposition de rendez-vous.
+     */
+    public function confirmAppointment(Appointment $appointment): JsonResponse
+    {
+        $user = Auth::user();
+        $patient = $user->patient;
+
+        if ($appointment->patient_id !== $patient->id) {
+            return response()->json(['message' => 'Action non autorisée.'], 403);
+        }
+
+        if ($appointment->status !== 'proposed') {
+            return response()->json(['message' => 'Ce rendez-vous ne peut pas être confirmé.'], 422);
+        }
+
+        $appointment->update(['status' => 'confirmed']);
+
+        return response()->json(['message' => 'Rendez-vous confirmé avec succès.', 'appointment' => $appointment->load('dentist', 'treatment')]);
+    }
+
+    /**
+     * Refuse une proposition de rendez-vous.
+     */
+    public function rejectAppointment(Appointment $appointment): JsonResponse
+    {
+        $user = Auth::user();
+        $patient = $user->patient;
+
+        if ($appointment->patient_id !== $patient->id) {
+            return response()->json(['message' => 'Action non autorisée.'], 403);
+        }
+
+        if ($appointment->status !== 'proposed') {
+            return response()->json(['message' => 'Cette proposition ne peut pas être refusée.'], 422);
+        }
+
+        $appointment->update(['status' => 'requested', 'appointment_date' => null, 'start_time' => null, 'end_time' => null]);
+
+        return response()->json(['message' => 'Proposition refusée. Votre demande repasse en attente.', 'appointment' => $appointment->load('treatment')]);
     }
 }

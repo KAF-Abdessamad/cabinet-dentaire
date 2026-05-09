@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import Navbar from './Navbar.jsx';
 import Footer from './Footer.jsx';
+import heroImg from '../img/Fotolia_61997183_Subscription_XXL-.jpg';
+import urgencesImg from '../img/urgences-cab-dentaire_750.jpg';
 
 const LandingPage = () => {
     const [isLoaded, setIsLoaded] = useState(false);
@@ -128,7 +130,7 @@ const LandingPage = () => {
                     >
                         <div className="relative z-10 rounded-[40px] overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-700">
                             <img 
-                                src="https://images.unsplash.com/photo-1629909605125-58da31ffb696?auto=format&fit=crop&q=80&w=800" 
+                                src={heroImg} 
                                 alt="Modern Dental Cabinet"
                                 className="w-full h-[600px] object-cover"
                             />
@@ -241,7 +243,7 @@ const LandingPage = () => {
                                 icon: <Clock className="w-8 h-8" />, 
                                 title: 'Urgences Dentaires', 
                                 desc: 'Une douleur vive ? Nous vous recevons en priorité pour vous soulager.',
-                                img: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=400'
+                                img: urgencesImg
                             },
                             { 
                                 icon: <UserCheck className="w-8 h-8" />, 

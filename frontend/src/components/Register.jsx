@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api.js';
+import logo from '../img/logo-removebg-preview.png';
 
 const normalizeForEmail = (value) =>
     (value || '')
@@ -89,10 +90,8 @@ const Register = () => {
 
                 <div className="bg-white rounded-2xl shadow-xl p-8">
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-900 rounded-full mb-4">
-                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                            </svg>
+                        <div className="inline-flex items-center justify-center w-20 h-20 bg-white border border-slate-100 rounded-full mb-4 shadow-sm overflow-hidden">
+                            <img src={logo} alt="Logo" className="w-full h-full object-contain p-2" />
                         </div>
                         <h1 className="text-3xl font-bold text-blue-900 mb-2">
                             Créer un compte patient

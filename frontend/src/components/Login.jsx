@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api.js';
+import logo from '../img/logo-removebg-preview.png';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -60,10 +61,8 @@ const Login = () => {
 
                 <div className="p-8 bg-white rounded-2xl shadow-xl">
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-900 rounded-full mb-4">
-                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
+                        <div className="inline-flex items-center justify-center w-20 h-20 bg-white border border-slate-100 rounded-full mb-4 shadow-sm overflow-hidden">
+                            <img src={logo} alt="Logo" className="w-full h-full object-contain p-2" />
                         </div>
                         <h2 className="text-3xl font-bold text-blue-900 mb-2">Connexion Patient</h2>
                         <p className="text-blue-700">Accédez à votre espace personnel</p>

@@ -16,11 +16,14 @@ class Appointment extends Model
     protected $fillable = [
         'patient_id',
         'user_id',
+        'treatment_id',
         'appointment_date',
         'start_time',
         'end_time',
         'status',
         'reason',
+        'patient_note',
+        'admin_note',
     ];
 
     protected $casts = [
@@ -35,6 +38,11 @@ class Appointment extends Model
     public function dentist(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function treatment(): BelongsTo
+    {
+        return $this->belongsTo(Treatment::class);
     }
 
     public function treatments(): BelongsToMany

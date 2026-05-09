@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AuthProvider } from '../hooks/useAuth.js';
+import { AuthProvider } from '../hooks/useAuth.jsx';
 import PatientShell from './PatientShell.jsx';
 import PatientDashboard from './PatientDashboard.jsx';
 import Login from './Login.jsx';

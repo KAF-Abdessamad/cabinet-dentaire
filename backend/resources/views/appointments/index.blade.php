@@ -52,7 +52,8 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Statut</label>
                         <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500">
                             <option value="">Tous</option>
-                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>En attente</option>
+                            <option value="requested" {{ request('status') == 'requested' ? 'selected' : '' }}>Nouvelle Demande</option>
+                            <option value="proposed" {{ request('status') == 'proposed' ? 'selected' : '' }}>Proposition Envoyée</option>
                             <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>Confirmé</option>
                             <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Terminé</option>
                             <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Annulé</option>
@@ -93,39 +94,57 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse($appointments as $appointment)
-                            <tr class="hover:bg-gray-50 transition-colors">
+                            <tr class="hover:bg-gray-50 transition-colors {{ $appointment->status == 'requested' ? 'bg-sky-50/30' : '' }}">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900">{{ $appointment->appointment_date->format('d/m/Y') }}</div>
-                                    <div class="text-sm text-gray-500">{{ $appointment->start_time }} - {{ $appointment->end_time }}</div>
+                                    @if($appointment->appointment_date)
+                                        <div class="text-sm font-medium text-gray-900">{{ $appointment->appointment_date->format('d/m/Y') }}</div>
+                                        <div class="text-sm text-gray-500">{{ $appointment->start_time }} - {{ $appointment->end_time }}</div>
+                                    @else
+                                        <span class="text-xs font-bold text-sky-600 bg-sky-100 px-2 py-1 rounded-full uppercase">À planifier</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-medium text-gray-900">{{ $appointment->patient->full_name ?? 'N/A' }}</div>
                                     <div class="text-sm text-gray-500">{{ $appointment->patient->phone ?? '' }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">{{ $appointment->dentist->name ?? 'Non assigné' }}</div>
+                                    @if($appointment->dentist)
+                                        <div class="text-sm text-gray-900">Dr. {{ $appointment->dentist->name }}</div>
+                                    @else
+                                        <span class="text-gray-400 italic text-sm">Non assigné</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">{{ $appointment->treatment->name ?? $appointment->reason ?? 'Consultation' }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">{{ Str::limit($appointment->reason, 30) ?? 'Non spécifié' }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex px-3 py-1 text-xs font-medium rounded-full 
-                                        @if($appointment->status == 'pending') bg-yellow-100 text-yellow-800
-                                        @elseif($appointment->status == 'confirmed') bg-green-100 text-green-800
-                                        @elseif($appointment->status == 'completed') bg-blue-100 text-blue-800
-                                        @elseif($appointment->status == 'cancelled') bg-red-100 text-red-800
-                                        @else bg-gray-100 text-gray-800 @endif">
-                                        @switch($appointment->status)
-                                            @case('pending') En attente @break
-                                            @case('confirmed') Confirmé @break
-                                            @case('completed') Terminé @break
-                                            @case('cancelled') Annulé @break
-                                            @default {{ $appointment->status }}
-                                        @endswitch
+                                    @php
+                                        $statusClasses = [
+                                            'requested' => 'bg-sky-100 text-sky-800 border-sky-200',
+                                            'proposed' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                                            'confirmed' => 'bg-green-100 text-green-800 border-green-200',
+                                            'completed' => 'bg-gray-100 text-gray-800 border-gray-200',
+                                            'cancelled' => 'bg-red-100 text-red-800 border-red-200',
+                                        ];
+                                        $statusLabels = [
+                                            'requested' => 'Nouvelle Demande',
+                                            'proposed' => 'Proposition envoyée',
+                                            'confirmed' => 'Confirmé',
+                                            'completed' => 'Terminé',
+                                            'cancelled' => 'Annulé',
+                                        ];
+                                    @endphp
+                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border {{ $statusClasses[$appointment->status] ?? 'bg-gray-100 text-gray-800' }}">
+                                        {{ $statusLabels[$appointment->status] ?? $appointment->status }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex justify-end space-x-2">
+                                        @if($appointment->status == 'requested')
+                                            <a href="{{ route('appointments.propose', $appointment) }}" class="text-sky-600 hover:text-sky-900 bg-sky-50 px-3 py-1 rounded-lg border border-sky-100">
+                                                Planifier
+                                            </a>
+                                        @endif
                                         <a href="{{ route('appointments.show', $appointment) }}" 
                                            class="text-sky-600 hover:text-sky-500 bg-sky-50 hover:bg-sky-100 px-3 py-1 rounded-lg transition-colors"
                                            title="Voir">

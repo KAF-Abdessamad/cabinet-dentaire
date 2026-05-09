@@ -23,12 +23,15 @@ class StoreAppointmentRequest extends FormRequest
     {
         return [
             'patient_id' => ['required', 'exists:patients,id'],
-            'user_id' => ['required', 'exists:users,id'],
-            'appointment_date' => ['required', 'date', 'after_or_equal:today'],
-            'start_time' => ['required', 'date_format:H:i'],
-            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'user_id' => ['nullable', 'exists:users,id'],
+            'treatment_id' => ['nullable', 'exists:treatments,id'],
+            'appointment_date' => ['nullable', 'date', 'after_or_equal:today'],
+            'start_time' => ['nullable', 'date_format:H:i'],
+            'end_time' => ['nullable', 'date_format:H:i', 'after:start_time'],
             'reason' => ['nullable', 'string', 'max:255'],
-            'status' => ['required', 'in:pending,confirmed,completed,cancelled'],
+            'patient_note' => ['nullable', 'string', 'max:1000'],
+            'admin_note' => ['nullable', 'string', 'max:1000'],
+            'status' => ['required', 'in:requested,proposed,confirmed,completed,cancelled'],
         ];
     }
 }

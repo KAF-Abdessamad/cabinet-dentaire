@@ -21,7 +21,8 @@ const tabs = [
 ];
 
 const statusAppointmentFr = {
-    pending: 'En attente',
+    requested: 'Demande envoyée',
+    proposed: 'Proposition reçue',
     confirmed: 'Confirmé',
     completed: 'Terminé',
     cancelled: 'Annulé',
@@ -55,43 +56,43 @@ const PatientDashboard = () => {
     const [appointmentsUp, setAppointmentsUp] = useState([]);
     const [patientBundle, setPatientBundle] = useState(null);
     const [dentists, setDentists] = useState([]);
+    const [treatments, setTreatments] = useState([]);
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const [bookForm, setBookForm] = useState({
-        user_id: '',
-        appointment_date: todayStr(),
-        start_time: '09:00',
-        end_time: '09:30',
-        reason: '',
+        treatment_id: '',
+        patient_note: '',
     });
     const [booking, setBooking] = useState(false);
     const [bookMsg, setBookMsg] = useState({ type: '', text: '' });
 
     const fetchPatientData = useCallback(async () => {
         try {
-            const [statsRes, apptRes, medRes, denRes, invRes] = await Promise.all([
+            const [statsRes, apptRes, medRes, denRes, invRes, treatRes] = await Promise.all([
                 api.get('/api/patient/stats'),
                 api.get('/api/patient/appointments'),
                 api.get('/api/patient/medical-records'),
                 api.get('/api/patient/dentists'),
                 api.get('/api/patient/invoices'),
+                api.get('/api/patient/treatments'),
             ]);
             setStats(statsRes.data);
             setAppointmentsUp(apptRes.data || []);
             setPatientBundle(medRes.data || null);
-            const list = denRes.data || [];
-            setDentists(list);
+            setDentists(denRes.data || []);
             setInvoices(invRes.data || []);
-            setBookForm((f) =>
-                list.length && !f.user_id ? { ...f, user_id: String(list[0].id) } : f,
-            );
+            const treats = treatRes.data || [];
+            setTreatments(treats);
+            if (treats.length > 0 && !bookForm.treatment_id) {
+                setBookForm(f => ({ ...f, treatment_id: String(treats[0].id) }));
+            }
         } catch (e) {
             console.error('Patient dashboard:', e);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [bookForm.treatment_id]);
 
     useEffect(() => {
         fetchPatientData();
@@ -114,22 +115,41 @@ const PatientDashboard = () => {
         setBooking(true);
         try {
             await api.post('/api/patient/appointments', {
-                user_id: Number(bookForm.user_id),
-                appointment_date: bookForm.appointment_date,
-                start_time: bookForm.start_time.length === 5 ? `${bookForm.start_time}:00` : bookForm.start_time,
-                end_time: bookForm.end_time.length === 5 ? `${bookForm.end_time}:00` : bookForm.end_time,
-                reason: bookForm.reason || null,
+                treatment_id: Number(bookForm.treatment_id),
+                patient_note: bookForm.patient_note || null,
             });
-            setBookMsg({ type: 'ok', text: 'Demande de rendez-vous enregistrée.' });
+            setBookMsg({ type: 'ok', text: 'Demande de rendez-vous envoyée. Le cabinet vous proposera un créneau prochainement.' });
+            setBookForm({ treatment_id: treatments[0]?.id || '', patient_note: '' });
             fetchPatientData();
         } catch (err) {
             const msg =
                 err.response?.data?.message ||
                 err.response?.data?.error ||
-                'Impossible d’enregistrer ce rendez-vous.';
+                'Impossible d’envoyer la demande.';
             setBookMsg({ type: 'err', text: msg });
         } finally {
             setBooking(false);
+        }
+    };
+
+    const handleConfirmProposal = async (id) => {
+        try {
+            await api.post(`/api/patient/appointments/${id}/confirm`);
+            fetchPatientData();
+        } catch (e) {
+            console.error(e);
+            alert('Erreur lors de la confirmation.');
+        }
+    };
+
+    const handleRejectProposal = async (id) => {
+        if (!window.confirm('Voulez-vous vraiment refuser cette proposition ? Votre demande restera en attente.')) return;
+        try {
+            await api.post(`/api/patient/appointments/${id}/reject`);
+            fetchPatientData();
+        } catch (e) {
+            console.error(e);
+            alert('Erreur lors du refus.');
         }
     };
 
@@ -290,38 +310,67 @@ const PatientDashboard = () => {
                                     {appointmentsUp.map((appointment) => (
                                         <li
                                             key={appointment.id}
-                                            className="rounded-2xl border border-dentist-muted/60 bg-dentist-soft/50 p-4 flex gap-4 items-start hover:shadow-md transition-shadow duration-300"
+                                            className={`rounded-2xl border p-4 flex flex-col gap-4 hover:shadow-md transition-all duration-300 ${
+                                                appointment.status === 'proposed' ? 'border-amber-300 bg-amber-50/50' : 'border-dentist-muted/60 bg-dentist-soft/50'
+                                            }`}
                                         >
-                                            <span className="flex flex-col items-center justify-center rounded-xl bg-gradient-to-br from-dentist-primary to-dentist-dark text-white px-4 py-2 text-center min-w-[4.5rem]">
-                                                <span className="text-xs uppercase font-semibold opacity-90">
-                                                    {formatDateFrench(appointment.appointment_date)}
+                                            <div className="flex gap-4 items-start">
+                                                <span className={`flex flex-col items-center justify-center rounded-xl text-white px-4 py-2 text-center min-w-[4.5rem] ${
+                                                    appointment.status === 'requested' ? 'bg-slate-400' : 'bg-gradient-to-br from-dentist-primary to-dentist-dark'
+                                                }`}>
+                                                    <span className="text-xs uppercase font-semibold opacity-90">
+                                                        {appointment.appointment_date ? formatDateFrench(appointment.appointment_date) : '??/??'}
+                                                    </span>
+                                                    <span className="text-sm font-bold">
+                                                        {appointment.start_time ? appointment.start_time.slice(0, 5) : '--:--'}
+                                                    </span>
                                                 </span>
-                                                <span className="text-sm font-bold">
-                                                    {appointment.start_time?.slice(0, 5)}
-                                                </span>
-                                            </span>
-                                            <div className="flex-1">
-                                                <p className="font-semibold text-slate-800">
-                                                    {appointment.dentist?.name || 'Dentiste'}
-                                                </p>
-                                                <p className="text-slate-600 text-xs mt-1">
-                                                    {appointment.treatments?.map((t) => t.name).join(', ') ||
-                                                        appointment.reason ||
-                                                        'Consultation'}
-                                                </p>
-                                                <span
-                                                    className={`inline-block mt-2 text-xs font-medium px-2.5 py-1 rounded-full ${
-                                                        appointment.status === 'confirmed'
-                                                            ? 'bg-emerald-100 text-emerald-800'
-                                                            : appointment.status === 'pending'
-                                                              ? 'bg-amber-100 text-amber-800'
-                                                              : 'bg-slate-100 text-slate-700'
-                                                    }`}
-                                                >
-                                                    {statusAppointmentFr[appointment.status] ||
-                                                        appointment.status}
-                                                </span>
+                                                <div className="flex-1">
+                                                    <p className="font-semibold text-slate-800">
+                                                        {appointment.status === 'requested' ? 'En attente de planification' : (appointment.dentist?.name ? `Dr. ${appointment.dentist.name}` : 'Dentiste')}
+                                                    </p>
+                                                    <p className="text-slate-600 text-xs mt-1">
+                                                        {appointment.treatment?.name || appointment.reason || 'Consultation'}
+                                                    </p>
+                                                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                                                        <span
+                                                            className={`inline-block text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full border ${
+                                                                appointment.status === 'confirmed'
+                                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                                                    : appointment.status === 'proposed'
+                                                                      ? 'bg-amber-50 text-amber-700 border-amber-100'
+                                                                      : appointment.status === 'requested'
+                                                                        ? 'bg-sky-50 text-sky-700 border-sky-100'
+                                                                        : 'bg-slate-50 text-slate-700 border-slate-100'
+                                                            }`}
+                                                        >
+                                                            {statusAppointmentFr[appointment.status] || appointment.status}
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
+
+                                            {appointment.status === 'proposed' && (
+                                                <div className="pt-3 border-t border-amber-200 flex flex-col gap-3">
+                                                    <p className="text-xs text-amber-800 font-medium italic bg-amber-100/50 p-2 rounded-lg">
+                                                        " {appointment.admin_note || "Le cabinet vous propose ce créneau."} "
+                                                    </p>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => handleConfirmProposal(appointment.id)}
+                                                            className="flex-1 bg-emerald-600 text-white text-xs font-bold py-2 rounded-lg hover:bg-emerald-700 transition"
+                                                        >
+                                                            Confirmer
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleRejectProposal(appointment.id)}
+                                                            className="flex-1 bg-white text-amber-700 border border-amber-200 text-xs font-bold py-2 rounded-lg hover:bg-amber-50 transition"
+                                                        >
+                                                            Refuser
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </li>
                                     ))}
                                 </ul>
@@ -349,83 +398,35 @@ const PatientDashboard = () => {
                             <form onSubmit={handleBookSubmit} className="space-y-4">
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-600 mb-2">
-                                        Dentiste
+                                        Type de soin
                                     </label>
                                     <select
                                         required
                                         className="w-full rounded-xl border border-dentist-muted bg-dentist-soft/50 px-4 py-3 text-sm focus:ring-2 focus:ring-dentist-primary focus:border-dentist-primary transition"
-                                        value={bookForm.user_id}
+                                        value={bookForm.treatment_id}
                                         onChange={(e) =>
-                                            setBookForm((f) => ({ ...f, user_id: e.target.value }))
+                                            setBookForm((f) => ({ ...f, treatment_id: e.target.value }))
                                         }
                                     >
-                                        <option value="">Choisir un dentiste</option>
-                                        {dentists.map((d) => (
-                                            <option key={d.id} value={d.id}>
-                                                {d.name}
+                                        <option value="">Sélectionner un soin</option>
+                                        {treatments.map((t) => (
+                                            <option key={t.id} value={t.id}>
+                                                {t.name} ({t.price} DH)
                                             </option>
                                         ))}
                                     </select>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-600 mb-2">
-                                            Date
-                                        </label>
-                                        <input
-                                            type="date"
-                                            required
-                                            min={todayStr()}
-                                            className="w-full rounded-xl border border-dentist-muted px-4 py-3 text-sm"
-                                            value={bookForm.appointment_date}
-                                            onChange={(e) =>
-                                                setBookForm((f) => ({
-                                                    ...f,
-                                                    appointment_date: e.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-600 mb-2">
-                                            Début
-                                        </label>
-                                        <input
-                                            type="time"
-                                            required
-                                            className="w-full rounded-xl border border-dentist-muted px-4 py-3 text-sm"
-                                            value={bookForm.start_time}
-                                            onChange={(e) =>
-                                                setBookForm((f) => ({ ...f, start_time: e.target.value }))
-                                            }
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-600 mb-2">
-                                            Fin
-                                        </label>
-                                        <input
-                                            type="time"
-                                            required
-                                            className="w-full rounded-xl border border-dentist-muted px-4 py-3 text-sm"
-                                            value={bookForm.end_time}
-                                            onChange={(e) =>
-                                                setBookForm((f) => ({ ...f, end_time: e.target.value }))
-                                            }
-                                        />
-                                    </div>
-                                </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-600 mb-2">
-                                        Motif (optionnel)
+                                        Note ou préférence (optionnel)
                                     </label>
                                     <textarea
                                         rows={3}
                                         className="w-full rounded-xl border border-dentist-muted px-4 py-3 text-sm"
-                                        placeholder="Ex. consultation, détartrage..."
-                                        value={bookForm.reason}
+                                        placeholder="Précisez vos disponibilités générales ou toute information utile..."
+                                        value={bookForm.patient_note}
                                         onChange={(e) =>
-                                            setBookForm((f) => ({ ...f, reason: e.target.value }))
+                                            setBookForm((f) => ({ ...f, patient_note: e.target.value }))
                                         }
                                     />
                                 </div>
@@ -437,7 +438,7 @@ const PatientDashboard = () => {
                                     {booking ? (
                                         <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} />
                                     ) : null}
-                                    Demander ce rendez-vous
+                                    Envoyer ma demande
                                 </button>
                             </form>
                         </div>
