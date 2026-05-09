@@ -60,7 +60,7 @@
                                     <div class="text-sm text-gray-900">{{ Str::limit($treatment->description, 100) }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
-                                    <div class="text-sm font-bold text-gray-900">{{ number_format($treatment->price, 2, ',', ' ') }} €</div>
+                                    <div class="text-sm font-bold text-gray-900">{{ number_format($treatment->price, 2, ',', ' ') }} DH</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex justify-end space-x-2">

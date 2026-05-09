@@ -124,12 +124,12 @@
             <div class="info-box">
                 <h3>Paiement</h3>
                 <p>Mode de règlement : <span class="value">Carte bancaire, Espèces, Chèque</span></p>
-                <p>Total TTC : <span class="value">{{ number_format($invoice->total_amount, 2, ',', ' ') }} €</span></p>
+                <p>Total TTC : <span class="value">{{ number_format($invoice->total_amount, 2, ',', ' ') }} DH</span></p>
                 @if($invoice->payments->sum('amount') > 0)
-                <p>Payé : <span class="value" style="color: #059669;">{{ number_format($invoice->payments->sum('amount'), 2, ',', ' ') }} €</span></p>
+                <p>Payé : <span class="value" style="color: #059669;">{{ number_format($invoice->payments->sum('amount'), 2, ',', ' ') }} DH</span></p>
                 @endif
                 @if($remaining > 0)
-                <p>Reste à payer : <span class="value" style="color: #dc2626;">{{ number_format($remaining, 2, ',', ' ') }} €</span></p>
+                <p>Reste à payer : <span class="value" style="color: #dc2626;">{{ number_format($remaining, 2, ',', ' ') }} DH</span></p>
                 @endif
             </div>
         </div>

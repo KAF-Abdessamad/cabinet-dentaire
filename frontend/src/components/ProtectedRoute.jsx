@@ -1,23 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import api from '../api.js';
+import { useAuth } from '../hooks/useAuth.js';
 
 const ProtectedRoute = () => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        api
-            .get('/api/user')
-            .then((response) => {
-                setUser(response.data);
-                setLoading(false);
-            })
-            .catch(() => {
-                setUser(null);
-                setLoading(false);
-            });
-    }, []);
+    const { user, loading } = useAuth();
 
     if (loading) {
         return (

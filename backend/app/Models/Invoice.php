@@ -19,6 +19,10 @@ class Invoice extends Model
         'invoice_date',
     ];
 
+    protected $casts = [
+        'invoice_date' => 'date',
+    ];
+
     public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class);

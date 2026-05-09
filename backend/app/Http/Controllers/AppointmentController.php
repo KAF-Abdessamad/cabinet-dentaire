@@ -15,6 +15,7 @@ use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class AppointmentController extends Controller
@@ -166,6 +167,12 @@ class AppointmentController extends Controller
             'quantity' => $validated['quantity'],
             'notes' => $validated['notes'],
         ]);
+
+        // Recalculate invoice if it exists
+        if ($appointment->invoice) {
+            $totalAmount = $appointment->treatments()->sum(DB::raw('applied_price * quantity'));
+            $appointment->invoice->update(['total_amount' => $totalAmount]);
+        }
 
         return back()->with('success', 'Soin ajouté au rendez-vous.');
     }

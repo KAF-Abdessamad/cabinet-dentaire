@@ -7,20 +7,8 @@ const api = axios.create({
         'Content-Type': 'application/json',
     },
     withCredentials: true,
-});
-
-// Interceptor to add XSRF token from cookies
-api.interceptors.request.use(config => {
-    const xsrfToken = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('XSRF-TOKEN='))
-        ?.split('=')[1];
-    
-    if (xsrfToken) {
-        config.headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfToken);
-    }
-    
-    return config;
+    xsrfCookieName: 'XSRF-TOKEN',
+    xsrfHeaderName: 'X-XSRF-TOKEN',
 });
 
 export default api;

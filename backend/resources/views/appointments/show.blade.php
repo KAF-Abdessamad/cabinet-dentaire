@@ -137,9 +137,9 @@
                                                 @endif
                                             </td>
                                             <td class="px-4 py-3 text-center text-sm text-gray-900">{{ $treatment->pivot->quantity }}</td>
-                                            <td class="px-4 py-3 text-right text-sm text-gray-900">{{ number_format($treatment->pivot->applied_price, 2, ',', ' ') }} €</td>
+                                            <td class="px-4 py-3 text-right text-sm text-gray-900">{{ number_format($treatment->pivot->applied_price, 2, ',', ' ') }} DH</td>
                                             <td class="px-4 py-3 text-right text-sm font-medium text-gray-900">
-                                                {{ number_format($treatment->pivot->applied_price * $treatment->pivot->quantity, 2, ',', ' ') }} €
+                                                {{ number_format($treatment->pivot->applied_price * $treatment->pivot->quantity, 2, ',', ' ') }} DH
                                             </td>
                                         </tr>
                                     @endforeach
@@ -148,7 +148,7 @@
                                     <tr>
                                         <td colspan="3" class="px-4 py-3 text-right font-medium text-gray-900">Total</td>
                                         <td class="px-4 py-3 text-right font-bold text-gray-900">
-                                            {{ number_format($appointment->treatments->sum(function($t) { return $t->pivot->applied_price * $t->pivot->quantity; }), 2, ',', ' ') }} €
+                                            {{ number_format($appointment->treatments->sum(function($t) { return $t->pivot->applied_price * $t->pivot->quantity; }), 2, ',', ' ') }} DH
                                         </td>
                                     </tr>
                                 </tfoot>
@@ -207,10 +207,11 @@
                             <p class="text-sm text-gray-600 mt-1">Montant: {{ number_format($appointment->invoice->total_amount, 2, ',', ' ') }} €</p>
                             <span class="inline-flex px-2 py-1 text-xs rounded-full mt-2
                                 @if($appointment->invoice->status == 'paid') bg-green-100 text-green-800
-                                @elseif($appointment->invoice->status == 'partial') bg-yellow-100 text-yellow-800
-                                @else bg-red-100 text-red-800 @endif">
+                                @elseif($appointment->invoice->status == 'partially_paid') bg-yellow-100 text-yellow-800
+                                @else bg-red-100 text-red-800
+                                @endif">
                                 @if($appointment->invoice->status == 'paid') Payée
-                                @elseif($appointment->invoice->status == 'partial') Partielle
+                                @elseif($appointment->invoice->status == 'partially_paid') Partielle
                                 @else Impayée @endif
                             </span>
                         </div>

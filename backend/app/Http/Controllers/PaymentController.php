@@ -141,7 +141,7 @@ class PaymentController extends Controller
         if ($totalPaid >= $totalAmount) {
             $invoice->update(['status' => 'paid']);
         } elseif ($totalPaid > 0) {
-            $invoice->update(['status' => 'partial']);
+            $invoice->update(['status' => 'partially_paid']);
         } else {
             $invoice->update(['status' => 'pending']);
         }

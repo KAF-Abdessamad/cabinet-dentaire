@@ -23,7 +23,7 @@ class InvoiceMail extends Mailable
     public function build(): self
     {
         return $this->subject('Votre facture - Cabinet Dentaire DentistPro')
-            ->view('emails.invoice')
+            ->view('emails.invoices.send')
             ->attach($this->pdfPath, [
                 'as' => 'facture-' . str_pad($this->invoice->id, 5, '0', STR_PAD_LEFT) . '.pdf',
                 'mime' => 'application/pdf',

@@ -17,8 +17,8 @@ Route::post('/admin/login', [AuthController::class, 'storeAdmin'])->middleware('
 ]);
 Route::post('/register', [PatientRegistrationController::class, 'store'])->middleware(['web', 'guest']);
 
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::post('/logout', [AuthController::class, 'destroy'])->middleware('web');
+Route::middleware(['auth:sanctum', 'web'])->group(function () {
+    Route::post('/logout', [AuthController::class, 'destroy']);
 
     // Current authenticated user (rôle inclus pour la SPA patient)
     Route::get('/user', function (Request $request) {

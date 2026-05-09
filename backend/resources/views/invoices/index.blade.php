@@ -72,7 +72,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-500">Montant Total</p>
-                        <p class="text-2xl font-bold text-sky-600">{{ number_format($totalAmount ?? 0, 0, ',', ' ') }} €</p>
+                        <p class="text-2xl font-bold text-sky-600">{{ number_format($totalAmount ?? 0, 0, ',', ' ') }} DH</p>
                     </div>
                 </div>
             </div>
@@ -104,7 +104,7 @@
                         <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500">
                             <option value="">Tous</option>
                             <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Payée</option>
-                            <option value="partial" {{ request('status') == 'partial' ? 'selected' : '' }}>Partielle</option>
+                            <option value="partially_paid" {{ request('status') == 'partially_paid' ? 'selected' : '' }}>Partielle</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Impayée</option>
                         </select>
                     </div>
@@ -161,10 +161,10 @@
                                     <div class="text-sm text-gray-900">{{ $invoice->invoice_date->format('d/m/Y') }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
-                                    <div class="text-sm font-medium text-gray-900">{{ number_format($invoice->total_amount, 2, ',', ' ') }} €</div>
+                                    <div class="text-sm font-medium text-gray-900">{{ number_format($invoice->total_amount, 2, ',', ' ') }} DH</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
-                                    <div class="text-sm text-gray-900">{{ number_format($invoice->payments->sum('amount'), 2, ',', ' ') }} €</div>
+                                    <div class="text-sm text-gray-900">{{ number_format($invoice->payments->sum('amount'), 2, ',', ' ') }} DH</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="inline-flex px-3 py-1 text-xs font-medium rounded-full 

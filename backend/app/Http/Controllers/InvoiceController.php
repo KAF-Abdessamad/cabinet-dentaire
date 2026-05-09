@@ -27,7 +27,7 @@ class InvoiceController extends Controller
 
         $invoices = $query->orderBy('invoice_date', 'desc')->paginate(10);
         
-        $totalUnpaid = Invoice::whereIn('status', ['pending', 'partial'])->sum('total_amount');
+        $totalUnpaid = Invoice::whereIn('status', ['pending', 'partially_paid'])->sum('total_amount');
         
         return view('invoices.index', compact('invoices', 'totalUnpaid'));
     }
@@ -75,7 +75,7 @@ class InvoiceController extends Controller
         Gate::authorize('update', $invoice);
 
         $validated = $request->validate([
-            'status' => 'required|in:pending,partial,paid,cancelled',
+            'status' => 'required|in:pending,partially_paid,paid,cancelled',
         ]);
 
         $invoice->update($validated);
@@ -100,7 +100,7 @@ class InvoiceController extends Controller
         if ($totalPaid >= $invoice->total_amount) {
             $invoice->update(['status' => 'paid']);
         } elseif ($totalPaid > 0) {
-            $invoice->update(['status' => 'partial']);
+            $invoice->update(['status' => 'partially_paid']);
         }
 
         return back()->with('success', 'Paiement enregistré avec succès.');

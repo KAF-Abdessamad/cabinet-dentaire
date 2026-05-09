@@ -31,8 +31,8 @@ class DashboardController extends Controller
             'completed_appointments_month' => Appointment::where('status', 'completed')->whereMonth('appointment_date', Carbon::now()->month)->count(),
             'revenue_month' => Payment::whereMonth('payment_date', Carbon::now()->month)->sum('amount'),
             'revenue_today' => Payment::whereDate('payment_date', $today)->sum('amount'),
-            'pending_invoices_count' => Invoice::whereIn('status', ['pending', 'partial'])->count(),
-            'pending_invoices_amount' => Invoice::whereIn('status', ['pending', 'partial'])->sum('total_amount') - Payment::sum('amount'),
+            'pending_invoices_count' => Invoice::whereIn('status', ['pending', 'partially_paid'])->count(),
+            'pending_invoices_amount' => Invoice::whereIn('status', ['pending', 'partially_paid'])->sum('total_amount') - Payment::sum('amount'),
         ];
 
         $todaysAppointments = Appointment::with(['patient', 'dentist', 'treatments'])

@@ -28,6 +28,7 @@ const statusAppointmentFr = {
 };
 
 const statusInvoiceFr = {
+    pending: 'En attente',
     unpaid: 'Impayée',
     partially_paid: 'Partiellement payée',
     paid: 'Payée',
