@@ -1,55 +1,79 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import logo from '../img/logo-removebg-preview.png';
+import { Smile, LayoutDashboard, Users, Calendar, LogOut } from 'lucide-react';
+import api from '../api.js';
 
 const Header = ({ user }) => {
     const location = useLocation();
+
+    const handleLogout = async () => {
+        try {
+            await api.get('/sanctum/csrf-cookie');
+            await api.post('/api/logout');
+        } catch {
+            // Force redirection
+        }
+        window.location.href = '/login';
+    };
     
     const navItems = [
-        { path: '/app', label: 'Tableau de Bord', icon: '📊' },
-        { path: '/app/patients', label: 'Patients', icon: '👥' },
-        { path: '/app/appointments', label: 'Rendez-vous', icon: '📅' },
+        { path: '/app', label: 'Tableau de Bord', icon: <LayoutDashboard className="h-4 w-4" /> },
+        { path: '/app/patients', label: 'Patients', icon: <Users className="h-4 w-4" /> },
+        { path: '/app/appointments', label: 'Rendez-vous', icon: <Calendar className="h-4 w-4" /> },
     ];
 
     return (
-        <header className="bg-white shadow-sm border-b border-slate-100">
+        <header className="bg-dentist-deeper border-b border-white/10 shadow-lg shadow-dentist-primary/10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16 items-center">
-                    <div className="flex items-center space-x-2">
-                        <div className="p-1 bg-white border border-slate-100 rounded-xl overflow-hidden w-10 h-10 flex items-center justify-center">
-                            <img src={logo} alt="Logo" className="w-full h-full object-contain" />
-                        </div>
-                        <span className="text-xl font-bold text-slate-800">
-                            Dentist<span className="text-medical-600">Pro</span>
+                <div className="flex justify-between h-20 items-center">
+                    <Link
+                        to="/app"
+                        className="flex items-center gap-3 text-white group"
+                    >
+                        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 ring-2 ring-white/25 transition-transform duration-300 group-hover:scale-105">
+                            <Smile className="h-6 w-6 text-white" strokeWidth={2} />
                         </span>
-                    </div>
+                        <div>
+                            <span className="block text-lg font-bold tracking-tight">Cabinet Smile</span>
+                            <span className="text-xs text-white/70">Espace professionnel</span>
+                        </div>
+                    </Link>
 
-                    <nav className="hidden md:flex space-x-1">
+                    <nav className="hidden md:flex items-center gap-1">
                         {navItems.map((item) => (
                             <Link
                                 key={item.path}
                                 to={item.path}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
                                     location.pathname === item.path
-                                        ? 'bg-medical-100 text-medical-700'
-                                        : 'text-slate-600 hover:bg-slate-100'
+                                        ? 'bg-white text-dentist-deeper shadow-md shadow-dentist-primary/15'
+                                        : 'text-white/85 hover:bg-white/10 hover:text-white'
                                 }`}
                             >
-                                <span className="mr-2">{item.icon}</span>
+                                {item.icon}
                                 {item.label}
                             </Link>
                         ))}
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="ml-2 flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
+                        >
+                            <LogOut className="h-4 w-4" />
+                            Déconnexion
+                        </button>
                     </nav>
 
                     <div className="flex items-center space-x-4">
                         {user && (
-                            <div className="flex items-center space-x-2">
-                                <div className="w-8 h-8 bg-medical-600 rounded-full flex items-center justify-center text-white font-medium">
+                            <div className="flex items-center space-x-3 bg-white/10 px-4 py-2 rounded-2xl border border-white/10">
+                                <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center text-white font-bold ring-2 ring-white/20">
                                     {user.name?.charAt(0).toUpperCase() || 'U'}
                                 </div>
-                                <span className="text-sm font-medium text-slate-700 hidden sm:block">
-                                    {user.name}
-                                </span>
+                                <div className="hidden sm:block">
+                                    <p className="text-xs text-white/60 font-medium leading-tight">Connecté en tant que</p>
+                                    <p className="text-sm font-bold text-white leading-tight">{user.name}</p>
+                                </div>
                             </div>
                         )}
                     </div>

@@ -16,6 +16,26 @@
             <p class="text-gray-600">Réponse à la demande de {{ $appointment->patient->full_name }}</p>
         </div>
 
+        @if($errors->any())
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-lg">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">Des erreurs sont survenues :</h3>
+                        <ul class="mt-1 text-sm text-red-700 list-disc list-inside">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div class="p-8">
                 <!-- Demande initiale -->

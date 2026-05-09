@@ -40,31 +40,29 @@ class AppointmentApiController extends Controller
         $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'user_id' => 'required|exists:users,id',
+            'treatment_id' => 'nullable|exists:treatments,id',
             'appointment_date' => 'required|date',
             'start_time' => 'required',
             'end_time' => 'required|after:start_time',
             'reason' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
+            'status' => 'nullable|in:requested,proposed,confirmed,completed,cancelled',
         ]);
 
         // Check for conflicts
         $conflict = Appointment::where('user_id', $validated['user_id'])
             ->where('appointment_date', $validated['appointment_date'])
-            ->where('status', '!=', 'cancelled')
             ->where(function ($query) use ($validated) {
                 $query->whereBetween('start_time', [$validated['start_time'], $validated['end_time']])
-                      ->orWhereBetween('end_time', [$validated['start_time'], $validated['end_time']]);
+                    ->orWhereBetween('end_time', [$validated['start_time'], $validated['end_time']]);
             })
             ->exists();
 
         if ($conflict) {
-            return response()->json(['error' => 'Time slot not available'], 422);
+            return response()->json(['error' => 'Dentiste non disponible sur ce créneau'], 422);
         }
 
-        $validated['status'] = 'pending';
         $appointment = Appointment::create($validated);
-        $appointment->load(['patient', 'dentist']);
-
         return response()->json($appointment, 201);
     }
 

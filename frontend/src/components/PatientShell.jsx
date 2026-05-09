@@ -21,7 +21,7 @@ const PatientShell = ({ children }) => {
         } catch {
             // On force la redirection même si le serveur a déjà fermé la session
         }
-        window.location.href = '/login/auth';
+        window.location.href = '/login';
     };
 
     return (
@@ -125,9 +125,9 @@ const PatientShell = ({ children }) => {
                         <Link to="/" className="hover:text-dentist-primary transition-colors">
                             Accueil
                         </Link>
-                        <a href="/admin/login" className="hover:text-dentist-primary transition-colors">
+                        <Link to="/admin/login" className="hover:text-dentist-primary transition-colors">
                             Espace professionnel
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </footer>

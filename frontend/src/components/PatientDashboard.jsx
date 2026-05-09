@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     User,
     Stethoscope,
@@ -9,15 +10,31 @@ import {
     CheckCircle2,
     AlertCircle,
     Loader2,
+    Bell,
+    X,
 } from 'lucide-react';
 import api from '../api.js';
 
-const tabs = [
-    { id: 'infos', label: 'Mes informations', Icon: User },
+const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+        opacity: 1, 
+        y: 0,
+        transition: { duration: 0.5, staggerChildren: 0.1 }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0 }
+};
+
+const PatientDashboard = () => { id: 'infos', label: 'Mes informations', Icon: User },
     { id: 'sante', label: 'Santé', Icon: Stethoscope },
     { id: 'rdv', label: 'Rendez-vous', Icon: CalendarDays },
     { id: 'historique', label: 'Historique', Icon: History },
     { id: 'paiements', label: 'Paiements', Icon: Wallet },
+    { id: 'notifs', label: 'Notifications', Icon: Bell },
 ];
 
 const statusAppointmentFr = {
@@ -58,6 +75,7 @@ const PatientDashboard = () => {
     const [dentists, setDentists] = useState([]);
     const [treatments, setTreatments] = useState([]);
     const [invoices, setInvoices] = useState([]);
+    const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const [bookForm, setBookForm] = useState({
@@ -69,19 +87,21 @@ const PatientDashboard = () => {
 
     const fetchPatientData = useCallback(async () => {
         try {
-            const [statsRes, apptRes, medRes, denRes, invRes, treatRes] = await Promise.all([
+            const [statsRes, apptRes, medRes, denRes, invRes, treatRes, notifRes] = await Promise.all([
                 api.get('/api/patient/stats'),
                 api.get('/api/patient/appointments'),
                 api.get('/api/patient/medical-records'),
                 api.get('/api/patient/dentists'),
                 api.get('/api/patient/invoices'),
                 api.get('/api/patient/treatments'),
+                api.get('/api/notifications'),
             ]);
             setStats(statsRes.data);
             setAppointmentsUp(apptRes.data || []);
             setPatientBundle(medRes.data || null);
             setDentists(denRes.data || []);
             setInvoices(invRes.data || []);
+            setNotifications(notifRes.data?.notifications || []);
             const treats = treatRes.data || [];
             setTreatments(treats);
             if (treats.length > 0 && !bookForm.treatment_id) {
@@ -153,6 +173,24 @@ const PatientDashboard = () => {
         }
     };
 
+    const handleMarkAsRead = async (id) => {
+        try {
+            await api.post(`/api/notifications/${id}/read`);
+            fetchPatientData();
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleMarkAllAsRead = async () => {
+        try {
+            await api.post('/api/notifications/read-all');
+            fetchPatientData();
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 text-dentist-deeper">
@@ -163,48 +201,84 @@ const PatientDashboard = () => {
     }
 
     return (
-        <div className="space-y-8 animate-fade-in">
+        <motion.div 
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            className="space-y-8"
+        >
             {/* Hero */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-dentist-primary via-dentist-secondary to-dentist-dark text-white shadow-xl shadow-dentist-primary/25 px-8 py-10 transition-transform hover:scale-[1.005] duration-500">
+            <motion.div 
+                variants={itemVariants}
+                className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-dentist-primary via-dentist-secondary to-dentist-dark text-white shadow-xl shadow-dentist-primary/25 px-8 py-10 transition-transform hover:scale-[1.005] duration-500"
+            >
                 <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight relative">
-                    Bienvenue{patient?.first_name ? `, ${patient.first_name}` : ''}
-                </h1>
-                <p className="mt-3 text-white/90 max-w-xl relative">
-                    Retrouvez vos informations, vos rendez-vous et vos paiements en un seul endroit.
-                </p>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <motion.h1 
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="text-3xl md:text-4xl font-bold tracking-tight relative"
+                        >
+                            Bienvenue{patient?.first_name ? `, ${patient.first_name}` : ''}
+                        </motion.h1>
+                        <motion.p 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.2 }}
+                            className="mt-3 text-white/90 max-w-xl relative"
+                        >
+                            Retrouvez vos informations, vos rendez-vous et vos paiements en un seul endroit.
+                        </motion.p>
+                    </div>
+                    {stats?.unread_notifications > 0 && (
+                        <motion.button 
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => setActiveTab('notifs')}
+                            className="relative p-3 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-300 group"
+                        >
+                            <Bell className="h-6 w-6 text-white group-hover:scale-110" strokeWidth={2.5} />
+                            <span className="absolute top-0 right-0 h-5 w-5 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-dentist-primary animate-bounce">
+                                {stats.unread_notifications}
+                            </span>
+                        </motion.button>
+                    )}
+                </div>
                 {stats && (
                     <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 relative">
-                        <div className="rounded-2xl bg-white/15 backdrop-blur-sm px-5 py-4 border border-white/20">
-                            <p className="text-sm text-white/80">Rendez-vous à venir</p>
-                            <p className="text-3xl font-bold mt-1">{stats.upcoming_appointments}</p>
-                        </div>
-                        <div className="rounded-2xl bg-white/15 backdrop-blur-sm px-5 py-4 border border-white/20">
-                            <p className="text-sm text-white/80">Actes prévus liés aux RDV</p>
-                            <p className="text-3xl font-bold mt-1">{stats.active_treatments}</p>
-                        </div>
-                        <div className="rounded-2xl bg-white/15 backdrop-blur-sm px-5 py-4 border border-white/20">
-                            <p className="text-sm text-white/80">Fiche santé complète</p>
-                            <p className="text-xl font-bold mt-1 flex items-center gap-2">
-                                {stats.profile_complete ? (
-                                    <>
-                                        <CheckCircle2 className="h-6 w-6" strokeWidth={2} />
-                                        Oui
-                                    </>
+                        {[
+                            { label: 'Rendez-vous à venir', value: stats.upcoming_appointments },
+                            { label: 'Actes prévus liés aux RDV', value: stats.active_treatments },
+                            { 
+                                label: 'Fiche santé complète', 
+                                value: stats.profile_complete ? (
+                                    <span className="flex items-center gap-2"><CheckCircle2 className="h-6 w-6" /> Oui</span>
                                 ) : (
-                                    <>
-                                        <AlertCircle className="h-6 w-6" strokeWidth={2} />
-                                        À compléter
-                                    </>
-                                )}
-                            </p>
-                        </div>
+                                    <span className="flex items-center gap-2 text-yellow-300"><AlertCircle className="h-6 w-6" /> À compléter</span>
+                                )
+                            }
+                        ].map((s, i) => (
+                            <motion.div 
+                                key={i}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 + i * 0.1 }}
+                                className="rounded-2xl bg-white/15 backdrop-blur-sm px-5 py-4 border border-white/20"
+                            >
+                                <p className="text-sm text-white/80">{s.label}</p>
+                                <p className="text-3xl font-bold mt-1">{s.value}</p>
+                            </motion.div>
+                        ))}
                     </div>
                 )}
-            </div>
+            </motion.div>
 
             {/* Tabs */}
-            <div className="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-dentist-surface/90 border border-dentist-muted/50 shadow-inner">
+            <motion.div 
+                variants={itemVariants}
+                className="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-dentist-surface/90 border border-dentist-muted/50 shadow-inner"
+            >
                 {tabs.map(({ id, label, Icon }) => {
                     const active = activeTab === id;
                     return (
@@ -212,27 +286,43 @@ const PatientDashboard = () => {
                             key={id}
                             type="button"
                             onClick={() => setActiveTab(id)}
-                            className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
+                            className={`relative flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
                                 active
-                                    ? 'bg-white text-dentist-deeper shadow-md scale-[1.02]'
-                                    : 'text-slate-600 hover:bg-white/60 hover:text-dentist-deeper'
+                                    ? 'text-dentist-deeper'
+                                    : 'text-slate-600 hover:text-dentist-deeper'
                             }`}
                         >
-                            <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
-                            {label}
+                            {active && (
+                                <motion.div 
+                                    layoutId="activeTab"
+                                    className="absolute inset-0 bg-white rounded-xl shadow-md"
+                                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                />
+                            )}
+                            <Icon className="h-4 w-4 shrink-0 relative z-10" strokeWidth={2} />
+                            <span className="relative z-10">{label}</span>
                         </button>
                     );
                 })}
-            </div>
+            </motion.div>
 
             {/* Panels */}
-            <div className="animate-tab rounded-3xl bg-white shadow-lg shadow-dentist-primary/10 border border-dentist-soft p-8 min-h-[280px]">
+            <motion.div 
+                key={activeTab}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="rounded-3xl bg-white shadow-lg shadow-dentist-primary/10 border border-dentist-soft p-8 min-h-[280px]"
+            >
+                <AnimatePresence mode="wait">
                 {activeTab === 'infos' && patient && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                        <h2 className="md:col-span-2 text-xl font-bold text-dentist-deeper flex items-center gap-2 mb-2">
-                            <User className="h-6 w-6 text-dentist-primary" strokeWidth={2} />
-                            Identité & contact
-                        </h2>
+                    <motion.div 
+                        key="infos"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm"
+                    >
                         <Field label="Prénom" value={patient.first_name} />
                         <Field label="Nom" value={patient.last_name} />
                         <Field label="Email" value={patient.email} />
@@ -534,6 +624,78 @@ const PatientDashboard = () => {
                                     </div>
                                 ))}
                             </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'notifs' && (
+                    <div className="space-y-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-dentist-deeper flex items-center gap-2">
+                                <Bell className="h-6 w-6 text-dentist-primary" strokeWidth={2} />
+                                Vos notifications
+                            </h2>
+                            {notifications.some(n => !n.read_at) && (
+                                <button 
+                                    onClick={handleMarkAllAsRead}
+                                    className="text-xs font-semibold text-dentist-primary hover:underline"
+                                >
+                                    Tout marquer comme lu
+                                </button>
+                            )}
+                        </div>
+                        
+                        {notifications.length === 0 ? (
+                            <div className="text-center py-12">
+                                <Bell className="h-12 w-12 text-slate-200 mx-auto mb-4" />
+                                <p className="text-slate-500">Aucune notification pour le moment.</p>
+                            </div>
+                        ) : (
+                            <ul className="space-y-4">
+                                {notifications.map((n) => (
+                                    <li 
+                                        key={n.id}
+                                        className={`relative group rounded-2xl border p-5 transition-all duration-300 ${
+                                            !n.read_at 
+                                                ? 'bg-blue-50/50 border-blue-100 shadow-sm' 
+                                                : 'bg-white border-slate-100 opacity-75'
+                                        }`}
+                                    >
+                                        <div className="flex justify-between items-start gap-4">
+                                            <div className="flex-1">
+                                                <h4 className={`font-bold ${!n.read_at ? 'text-blue-900' : 'text-slate-700'}`}>
+                                                    {n.title}
+                                                </h4>
+                                                <p className="text-sm text-slate-600 mt-1 leading-relaxed">
+                                                    {n.message}
+                                                </p>
+                                                <p className="text-[10px] text-slate-400 mt-3 font-medium uppercase tracking-wider">
+                                                    {new Date(n.created_at).toLocaleString('fr-FR', {
+                                                        day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
+                                                    })}
+                                                </p>
+                                            </div>
+                                            {!n.read_at && (
+                                                <button 
+                                                    onClick={() => handleMarkAsRead(n.id)}
+                                                    className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-400 transition-colors"
+                                                    title="Marquer comme lu"
+                                                >
+                                                    <CheckCircle2 className="h-5 w-5" />
+                                                </button>
+                                            )}
+                                        </div>
+                                        {n.link && (
+                                            <button 
+                                                onClick={() => window.location.href = n.link}
+                                                className="mt-4 text-xs font-bold text-dentist-primary flex items-center gap-1 hover:underline"
+                                            >
+                                                Consulter <CalendarDays className="h-3 w-3" />
+                                            </button>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
                         )}
                     </div>
                 )}

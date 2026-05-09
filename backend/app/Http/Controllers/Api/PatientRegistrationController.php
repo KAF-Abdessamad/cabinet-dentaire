@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Patient;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -137,6 +138,26 @@ class PatientRegistrationController extends Controller
                 'medical_history' => $request->medical_history,
             ]);
 
+            // Create notification for the new patient
+            Notification::create([
+                'user_id' => $user->id,
+                'title' => 'Bienvenue !',
+                'message' => 'Votre compte patient a été créé avec succès. Bienvenue dans notre cabinet.',
+                'type' => 'success',
+            ]);
+
+            // Notify admins about new registration
+            $admins = User::role('admin')->get();
+            foreach ($admins as $admin) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'title' => 'Nouveau Patient',
+                    'message' => "Un nouveau patient s'est inscrit : " . $user->name,
+                    'type' => 'info',
+                    'link' => '/admin/patients/' . $patient->id,
+                ]);
+            }
+
             return [$user, $patient];
         });
 
@@ -149,7 +170,7 @@ class PatientRegistrationController extends Controller
 
         return response()->json([
             'message' => 'Compte patient créé avec succès',
-            'login_url' => '/login/auth',
+            'login_url' => '/login',
             'expected_email' => $expectedEmail,
         ], 201);
     }

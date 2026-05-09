@@ -54,11 +54,11 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div class="p-4 bg-gray-50 rounded-lg">
                             <p class="text-sm text-gray-500">Date</p>
-                            <p class="text-lg font-semibold text-gray-900">{{ $appointment->appointment_date->format('d/m/Y') }}</p>
+                            <p class="text-lg font-semibold text-gray-900">{{ $appointment->appointment_date ? $appointment->appointment_date->format('d/m/Y') : 'À planifier' }}</p>
                         </div>
                         <div class="p-4 bg-gray-50 rounded-lg">
                             <p class="text-sm text-gray-500">Heure</p>
-                            <p class="text-lg font-semibold text-gray-900">{{ $appointment->start_time }} - {{ $appointment->end_time }}</p>
+                            <p class="text-lg font-semibold text-gray-900">{{ $appointment->start_time ?? '--:--' }} - {{ $appointment->end_time ?? '--:--' }}</p>
                         </div>
                         <div class="p-4 bg-gray-50 rounded-lg">
                             <p class="text-sm text-gray-500">Motif</p>
@@ -91,6 +91,8 @@
                             @csrf
                             @method('PATCH')
                             <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                                <option value="requested" {{ $appointment->status == 'requested' ? 'selected' : '' }}>Nouvelle Demande</option>
+                                <option value="proposed" {{ $appointment->status == 'proposed' ? 'selected' : '' }}>Proposition Envoyée</option>
                                 <option value="pending" {{ $appointment->status == 'pending' ? 'selected' : '' }}>En attente</option>
                                 <option value="confirmed" {{ $appointment->status == 'confirmed' ? 'selected' : '' }}>Confirmé</option>
                                 <option value="completed" {{ $appointment->status == 'completed' ? 'selected' : '' }}>Terminé</option>

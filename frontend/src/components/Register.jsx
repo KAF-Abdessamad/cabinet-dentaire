@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth.jsx';
 import api from '../api.js';
 import logo from '../img/logo-removebg-preview.png';
 
@@ -32,6 +33,7 @@ const Register = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const expectedEmail = useMemo(() => {
         const local = `${normalizeForEmail(formData.first_name)}${normalizeForEmail(formData.last_name)}`;
@@ -51,18 +53,20 @@ const Register = () => {
         setLoading(true);
 
         try {
-            console.log('Getting CSRF cookie...');
+            // Get CSRF cookie first for stateful request
             await api.get('/sanctum/csrf-cookie');
             
-            console.log('Registering patient...');
             const payload = { ...formData, email: expectedEmail };
             const response = await api.post('/api/register', payload);
 
-            console.log('Registration response:', response.data);
-            
             if (response.status === 201) {
-                // Redirect to login after successful registration
-                navigate('/login/auth', { replace: true });
+                // Auto-login after registration
+                const loginResult = await login(expectedEmail, formData.password);
+                if (loginResult.success) {
+                    navigate('/patient/dashboard', { replace: true });
+                } else {
+                    navigate('/login', { replace: true });
+                }
             }
         } catch (err) {
             console.error('Registration error:', err);

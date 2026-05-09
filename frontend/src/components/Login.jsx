@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import api from '../api.js';
+import { useAuth } from '../hooks/useAuth.jsx';
 import logo from '../img/logo-removebg-preview.png';
 
 const Login = () => {
@@ -9,6 +9,7 @@ const Login = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -16,33 +17,16 @@ const Login = () => {
         setLoading(true);
 
         try {
-            // Get CSRF cookie first from backend
-            console.log('Getting CSRF cookie...');
-            await api.get('/sanctum/csrf-cookie');
-            console.log('CSRF cookie set:', document.cookie.includes('XSRF-TOKEN'));
+            const result = await login(email, password);
             
-            // Attempt login via API
-            console.log('Attempting login...');
-            const response = await api.post('/api/login', {
-                email,
-                password
-            });
-
-            console.log('Login response:', response.data);
-            
-            if (response.status === 200) {
-                // Redirect to patient dashboard on success
-                window.location.href = '/patient/dashboard';
+            if (result.success) {
+                navigate('/patient/dashboard', { replace: true });
+            } else {
+                setError(result.error || 'Email ou mot de passe incorrect');
             }
         } catch (err) {
             console.error('Login error:', err);
-            if (err.response?.status === 422) {
-                setError('Email ou mot de passe incorrect');
-            } else if (err.response?.status === 419) {
-                setError('Erreur CSRF. Veuillez rafraîchir la page.');
-            } else {
-                setError('Une erreur est survenue. Veuillez réessayer.');
-            }
+            setError('Une erreur est survenue. Veuillez réessayer.');
         } finally {
             setLoading(false);
         }
@@ -52,11 +36,11 @@ const Login = () => {
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 {/* Back to portal */}
-                <Link to="/login" className="inline-flex items-center text-blue-900 hover:underline mb-6">
+                <Link to="/" className="inline-flex items-center text-blue-900 hover:underline mb-6">
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
-                    Retour à l'espace patient
+                    Retour à l'accueil
                 </Link>
 
                 <div className="p-8 bg-white rounded-2xl shadow-xl">

@@ -27,7 +27,7 @@ class DashboardController extends Controller
             'new_patients_month' => Patient::whereMonth('created_at', Carbon::now()->month)->count(),
             'appointments_today' => Appointment::whereDate('appointment_date', $today)->count(),
             'appointments_week' => Appointment::whereBetween('appointment_date', [$weekStart, Carbon::now()->endOfWeek()])->count(),
-            'pending_appointments' => Appointment::where('status', 'pending')->count(),
+            'pending_appointments' => Appointment::whereIn('status', ['pending', 'requested', 'proposed'])->count(),
             'completed_appointments_month' => Appointment::where('status', 'completed')->whereMonth('appointment_date', Carbon::now()->month)->count(),
             'revenue_month' => Payment::whereMonth('payment_date', Carbon::now()->month)->sum('amount'),
             'revenue_today' => Payment::whereDate('payment_date', $today)->sum('amount'),
@@ -60,6 +60,13 @@ class DashboardController extends Controller
 
         $revenueChart = $this->getRevenueChartData();
 
+        $weekAppointments = Appointment::with(['patient', 'treatment'])
+            ->whereBetween('appointment_date', [$weekStart, Carbon::now()->endOfWeek()])
+            ->get()
+            ->groupBy(function($val) {
+                return Carbon::parse($val->appointment_date)->format('Y-m-d');
+            });
+
         return view('dashboard', compact(
             'stats', 
             'todaysAppointments', 
@@ -67,7 +74,8 @@ class DashboardController extends Controller
             'recentPatients', 
             'recentPayments',
             'recentActivity',
-            'revenueChart'
+            'revenueChart',
+            'weekAppointments'
         ));
     }
 

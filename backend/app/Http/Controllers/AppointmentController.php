@@ -87,7 +87,7 @@ class AppointmentController extends Controller
         $conflict = Appointment::where('user_id', $validated['user_id'])
             ->where('appointment_date', $validated['appointment_date'])
             ->where('id', '!=', $appointment->id)
-            ->where('status', 'confirmed')
+            ->whereIn('status', ['confirmed', 'proposed'])
             ->where(function ($query) use ($startTime, $endTime) {
                 $query->whereBetween('start_time', [$startTime->format('H:i'), $endTime->format('H:i')])
                       ->orWhereBetween('end_time', [$startTime->format('H:i'), $endTime->format('H:i')])
@@ -110,6 +110,16 @@ class AppointmentController extends Controller
             'admin_note' => $validated['admin_note'],
             'status' => 'proposed',
         ]);
+
+        // Notify the patient about the proposal
+        if ($appointment->patient && $appointment->patient->user_id) {
+            \App\Models\Notification::create([
+                'user_id' => $appointment->patient->user_id,
+                'title' => 'Nouvelle proposition de créneau',
+                'message' => "Le cabinet vous propose un rendez-vous le " . $startTime->format('d/m/Y') . " à " . $startTime->format('H:i') . ". Veuillez confirmer ou refuser.",
+                'type' => 'info',
+            ]);
+        }
 
         return redirect()->route('appointments.show', $appointment)->with('success', 'Proposition de créneau envoyée au patient.');
     }
@@ -186,7 +196,7 @@ class AppointmentController extends Controller
         Gate::authorize('update', $appointment);
 
         $validated = $request->validate([
-            'status' => 'required|in:pending,confirmed,completed,cancelled,no_show',
+            'status' => 'required|in:pending,confirmed,completed,cancelled,no_show,requested,proposed',
         ]);
 
         $oldStatus = $appointment->status;

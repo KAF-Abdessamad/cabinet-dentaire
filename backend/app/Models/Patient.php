@@ -11,11 +11,6 @@ class Patient extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $casts = [
-        'birth_date' => 'date',
-        'deleted_at' => 'datetime',
-    ];
-
     protected $fillable = [
         'user_id',
         'first_name',
@@ -29,6 +24,10 @@ class Patient extends Model
         'blood_group',
         'allergies',
         'medical_history',
+    ];
+
+    protected $casts = [
+        'birth_date' => 'date',
     ];
 
     public function appointments(): HasMany
@@ -54,10 +53,5 @@ class Patient extends Model
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
     }
 }

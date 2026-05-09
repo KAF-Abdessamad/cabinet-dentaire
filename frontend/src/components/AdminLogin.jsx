@@ -19,7 +19,6 @@ const AdminLogin = () => {
             // Get CSRF cookie first from backend
             console.log('Getting CSRF cookie...');
             await api.get('/sanctum/csrf-cookie');
-            console.log('CSRF cookie set:', document.cookie.includes('XSRF-TOKEN'));
             
             // Attempt login via API
             console.log('Attempting admin login...');
@@ -32,9 +31,12 @@ const AdminLogin = () => {
             
             if (response.status === 200) {
                 // Check if user has admin role
-                if (response.data.user.role === 'admin' || response.data.user.role === 'dentiste' || response.data.user.role === 'assistant') {
-                    // Redirect to admin dashboard (Laravel)
-                    window.location.href = 'http://localhost:8000/admin/dashboard';
+                const userData = response.data.user;
+                if (userData.role === 'admin' || userData.role === 'dentiste' || userData.role === 'assistant') {
+                    // Force a small delay to ensure session is written
+                    setTimeout(() => {
+                        window.location.href = '/admin/dashboard';
+                    }, 500);
                 } else {
                     setError('Accès refusé. Vous n\'avez pas les droits administrateur.');
                 }
@@ -56,7 +58,7 @@ const AdminLogin = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-emerald-600 via-teal-700 to-cyan-800 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center p-4">
             <div className="max-w-md w-full">
                 {/* Back to home */}
                 <Link to="/" className="inline-flex items-center text-white hover:underline mb-6">
@@ -71,7 +73,7 @@ const AdminLogin = () => {
                         <div className="inline-flex items-center justify-center w-20 h-20 bg-white border border-slate-100 rounded-full mb-4 shadow-sm overflow-hidden">
                             <img src={logo} alt="Logo" className="w-full h-full object-contain p-2" />
                         </div>
-                        <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-700 to-teal-800 bg-clip-text text-transparent mb-2">
+                        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-700 to-indigo-800 bg-clip-text text-transparent mb-2">
                             Espace Cabinet
                         </h1>
                         <p className="text-gray-600 font-medium">
@@ -95,7 +97,7 @@ const AdminLogin = () => {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                                 placeholder="admin@cabinet.com"
                             />
                         </div>
@@ -109,7 +111,7 @@ const AdminLogin = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                                 placeholder="••••••••"
                             />
                         </div>
@@ -117,7 +119,7 @@ const AdminLogin = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-emerald-600 to-teal-700 text-white py-4 px-4 rounded-xl hover:from-emerald-700 hover:to-teal-800 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-lg shadow-lg hover:shadow-xl"
+                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-4 px-4 rounded-xl hover:from-blue-700 hover:to-indigo-800 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-lg shadow-lg hover:shadow-xl"
                         >
                             {loading ? 'Connexion en cours...' : 'SE CONNECTER'}
                         </button>
@@ -126,7 +128,7 @@ const AdminLogin = () => {
                     <div className="mt-8 text-center pt-6 border-t border-gray-200">
                         <p className="text-gray-600 text-sm">
                             Vous êtes patient ?{' '}
-                            <Link to="/login" className="text-emerald-600 hover:text-emerald-700 font-semibold hover:underline">
+                            <Link to="/login" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline">
                                 Accès patient
                             </Link>
                         </p>

@@ -13,8 +13,13 @@ export const AuthProvider = ({ children }) => {
         if (userMeta) {
             try {
                 const userData = JSON.parse(userMeta.content);
-                if (userData && userData.name) {
+                if (userData && userData.id) {
                     setUser(userData);
+                    setLoading(false);
+                    return;
+                } else if (userMeta.content === 'null') {
+                    // Explicitly not logged in via meta tag
+                    setUser(null);
                     setLoading(false);
                     return;
                 }
@@ -30,7 +35,10 @@ export const AuthProvider = ({ children }) => {
                 setUser(response.data);
             }
         } catch (error) {
-            // 401 is normal if not logged in
+            // 401 is normal if not logged in - don't log as error to avoid confusion
+            if (error.response?.status !== 401) {
+                console.error('Auth check error:', error);
+            }
             setUser(null);
         } finally {
             setLoading(false);
@@ -62,11 +70,11 @@ export const AuthProvider = ({ children }) => {
         try {
             await api.post('/api/logout');
             setUser(null);
-            window.location.href = '/login/auth';
+            window.location.href = '/login';
         } catch (error) {
             console.error('Logout error:', error);
             setUser(null);
-            window.location.href = '/login/auth';
+            window.location.href = '/login';
         }
     };
 

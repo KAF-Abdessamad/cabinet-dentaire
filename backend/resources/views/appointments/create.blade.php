@@ -127,23 +127,27 @@
                     </div>
 
                     <div class="md:col-span-2">
-                        <label for="reason" class="block text-sm font-medium text-gray-700 mb-2">
-                            Motif de la consultation
+                        <label for="treatment_id" class="block text-sm font-medium text-gray-700 mb-2">
+                            Type de soin <span class="text-red-500">*</span>
                         </label>
-                        <select name="reason" id="reason"
+                        <select name="treatment_id" id="treatment_id" required
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
-                            <option value="">Sélectionner un motif</option>
-                            <option value="Consultation générale" {{ old('reason') == 'Consultation générale' ? 'selected' : '' }}>Consultation générale</option>
-                            <option value="Détartrage" {{ old('reason') == 'Détartrage' ? 'selected' : '' }}>Détartrage</option>
-                            <option value="Soin des caries" {{ old('reason') == 'Soin des caries' ? 'selected' : '' }}>Soin des caries</option>
-                            <option value="Extraction dentaire" {{ old('reason') == 'Extraction dentaire' ? 'selected' : '' }}>Extraction dentaire</option>
-                            <option value="Couronne / Bridge" {{ old('reason') == 'Couronne / Bridge' ? 'selected' : '' }}>Couronne / Bridge</option>
-                            <option value="Implant dentaire" {{ old('reason') == 'Implant dentaire' ? 'selected' : '' }}>Implant dentaire</option>
-                            <option value="Blanchiment" {{ old('reason') == 'Blanchiment' ? 'selected' : '' }}>Blanchiment dentaire</option>
-                            <option value="Orthodontie" {{ old('reason') == 'Orthodontie' ? 'selected' : '' }}>Orthodontie</option>
-                            <option value="Urgence dentaire" {{ old('reason') == 'Urgence dentaire' ? 'selected' : '' }}>Urgence dentaire</option>
-                            <option value="Autre" {{ old('reason') == 'Autre' ? 'selected' : '' }}>Autre</option>
+                            <option value="">Sélectionner un soin</option>
+                            @foreach($treatments as $treatment)
+                                <option value="{{ $treatment->id }}" {{ old('treatment_id') == $treatment->id ? 'selected' : '' }}>
+                                    {{ $treatment->name }} ({{ $treatment->price }} DH)
+                                </option>
+                            @endforeach
                         </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="reason" class="block text-sm font-medium text-gray-700 mb-2">
+                            Motif / Note additionnelle
+                        </label>
+                        <textarea name="reason" id="reason" rows="3"
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                                  placeholder="Précisions sur le rendez-vous...">{{ old('reason') }}</textarea>
                     </div>
                 </div>
 

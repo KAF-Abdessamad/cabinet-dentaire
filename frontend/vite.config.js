@@ -5,14 +5,9 @@ export default defineConfig({
     plugins: [react()],
     // SPA patient served at domain root in prod (Laravel).
     server: {
-        port: 5173,
+        port: 5174,
         proxy: {
             '/api': {
-                target: 'http://localhost:8000',
-                changeOrigin: true,
-            },
-            // Allow navigating to Laravel admin while developing on Vite.
-            '/admin': {
                 target: 'http://localhost:8000',
                 changeOrigin: true,
             },
@@ -20,18 +15,8 @@ export default defineConfig({
                 target: 'http://localhost:8000',
                 changeOrigin: true,
             },
-            '/login': {
-                target: 'http://localhost:8000',
-                changeOrigin: true,
-            },
-            '/logout': {
-                target: 'http://localhost:8000',
-                changeOrigin: true,
-            },
-            '/register': {
-                target: 'http://localhost:8000',
-                changeOrigin: true,
-            },
+            // Note: /login, /register, /logout are handled by the React SPA
+            // The API calls to these are already under /api/...
         },
     },
     build: {

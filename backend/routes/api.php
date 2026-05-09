@@ -6,19 +6,22 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PatientDashboardController;
 use App\Http\Controllers\Api\PatientApiController;
 use App\Http\Controllers\Api\AppointmentApiController;
+use App\Http\Controllers\Api\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Public API routes (no auth required)
-Route::post('/login', [AuthController::class, 'store'])->middleware(['web', 'guest']);
-Route::post('/admin/login', [AuthController::class, 'storeAdmin'])->middleware('force.json')->withoutMiddleware([
-    \Illuminate\Auth\Middleware\Authenticate::class,
-    \Illuminate\Auth\Middleware\RedirectIfAuthenticated::class,
-]);
-Route::post('/register', [PatientRegistrationController::class, 'store'])->middleware(['web', 'guest']);
+Route::post('/login', [AuthController::class, 'store'])->middleware(['web', 'force.json']);
+Route::post('/admin/login', [AuthController::class, 'storeAdmin'])->middleware(['web', 'force.json']);
+Route::post('/register', [PatientRegistrationController::class, 'store'])->middleware(['web', 'force.json']);
 
-Route::middleware(['auth:sanctum', 'web'])->group(function () {
+Route::middleware(['auth:sanctum', 'web', 'force.json'])->group(function () {
     Route::post('/logout', [AuthController::class, 'destroy']);
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 
     // Current authenticated user (rôle inclus pour la SPA patient)
     Route::get('/user', function (Request $request) {

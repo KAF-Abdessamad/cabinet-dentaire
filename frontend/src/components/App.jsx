@@ -1,64 +1,66 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { AuthProvider } from '../hooks/useAuth.jsx';
-import PatientShell from './PatientShell.jsx';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import Header from './Header.jsx';
+import Dashboard from './Dashboard.jsx';
+import PatientList from './PatientList.jsx';
+import AppointmentCalendar from './AppointmentCalendar.jsx';
 import PatientDashboard from './PatientDashboard.jsx';
 import Login from './Login.jsx';
 import Register from './Register.jsx';
-import PatientPortal from './PatientPortal.jsx';
+import AdminLogin from './AdminLogin.jsx';
 import LandingPage from './LandingPage.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
+import { useAuth } from '../hooks/useAuth.jsx';
+import api from '../api.js';
 
-const PageTransition = ({ children }) => (
-    <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -20 }}
-        transition={{ duration: 0.3 }}
-    >
-        {children}
-    </motion.div>
-);
+import PatientShell from './PatientShell.jsx';
 
-const AnimatedRoutes = () => {
-    const location = useLocation();
+// Layout component that wraps all protected routes
+const AppLayout = () => {
+    const { user } = useAuth();
     return (
-        <AnimatePresence mode="wait">
-            <Routes location={location} key={location.pathname}>
-                {/* Landing page */}
-                <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
-                
-                {/* Public routes */}
-                <Route path="/login" element={<PageTransition><PatientPortal /></PageTransition>} />
-                <Route path="/login/auth" element={<PageTransition><Login /></PageTransition>} />
-                <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
-                
-                {/* Patient routes */}
-                <Route element={<ProtectedRoute />}>
-                    <Route
-                        element={
-                            <PatientShell>
-                                <Outlet />
-                            </PatientShell>
-                        }
-                    >
-                        <Route path="/patient/dashboard" element={<PageTransition><PatientDashboard /></PageTransition>} />
-                    </Route>
-                </Route>
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-        </AnimatePresence>
+        <div className="min-h-screen bg-dentist-soft">
+            <Header user={user} />
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <Outlet />
+            </main>
+        </div>
     );
 };
 
 const App = () => {
     return (
-        <AuthProvider>
-            <BrowserRouter>
-                <AnimatedRoutes />
-            </BrowserRouter>
-        </AuthProvider>
+        <BrowserRouter>
+            <Routes>
+                {/* Landing page */}
+                <Route path="/" element={<LandingPage />} />
+                
+                {/* Public routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/admin/login" element={<AdminLogin />} />
+                
+                {/* Patient routes */}
+                <Route element={<ProtectedRoute />}>
+                    <Route element={<PatientShell><Outlet /></PatientShell>}>
+                        <Route path="/patient/dashboard" element={<PatientDashboard />} />
+                    </Route>
+                </Route>
+                
+                {/* Admin/Dentist routes */}
+                <Route element={<ProtectedRoute />}>
+                    <Route element={<AppLayout />}>
+                        <Route path="/app" element={<Dashboard />} />
+                        <Route path="/app/patients" element={<PatientList />} />
+                        <Route path="/app/appointments" element={<AppointmentCalendar />} />
+                    </Route>
+                </Route>
+                
+                {/* Admin dashboard redirect to Laravel */}
+                <Route path="/admin/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+        </BrowserRouter>
     );
 };
 

@@ -21,7 +21,7 @@ class ForceJsonResponse
         $response = $next($request);
         
         // Prevent redirects by converting them to JSON responses
-        if ($response->isRedirect()) {
+        if ($response instanceof \Illuminate\Http\RedirectResponse) {
             return response()->json([
                 'message' => 'Redirect prevented',
                 'redirect_url' => $response->getTargetUrl(),

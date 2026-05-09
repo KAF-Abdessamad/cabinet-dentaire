@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { Link } from 'react-router-dom';
+import { Search, UserPlus, MoreVertical, Eye, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import api from '../api.js';
 
 const PatientList = () => {
     const [patients, setPatients] = useState([]);
@@ -18,7 +20,7 @@ const PatientList = () => {
     const fetchPatients = async () => {
         try {
             setLoading(true);
-            const response = await axios.get('/api/patients', {
+            const response = await api.get('/api/patients', {
                 params: {
                     search: search,
                     page: pagination.currentPage

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api.js';
 
 const AppointmentCalendar = () => {
     const [appointments, setAppointments] = useState([]);
@@ -13,7 +13,7 @@ const AppointmentCalendar = () => {
     const fetchAppointments = async () => {
         try {
             setLoading(true);
-            const response = await axios.get('/api/appointments', {
+            const response = await api.get('/api/appointments', {
                 params: { date: selectedDate }
             });
             setAppointments(response.data);

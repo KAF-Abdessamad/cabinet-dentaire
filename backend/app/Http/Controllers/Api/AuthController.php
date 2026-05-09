@@ -23,28 +23,16 @@ class AuthController extends Controller
 
         if (! Auth::attempt($request->only('email', 'password'))) {
             \Log::warning('Login failed', ['email' => $request->email]);
-            throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
-            ]);
+            return response()->json([
+                'message' => 'Email ou mot de passe incorrect',
+            ], 422);
         }
 
         $request->session()->regenerate();
         \Log::info('Login successful', ['user_id' => Auth::id(), 'session_id' => $request->session()->getId()]);
 
-        // Get the XSRF token for the frontend
-        $xsrfToken = $request->cookie('XSRF-TOKEN');
-
-        $user = Auth::user();
-
         return response()->json([
-            'message' => 'Authenticated successfully',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->roles->first()?->name ?? null,
-            ],
-            'xsrf_token' => $xsrfToken,
+            'user' => Auth::user(),
         ]);
     }
 
@@ -80,12 +68,13 @@ class AuthController extends Controller
 
         if (! Auth::attempt($request->only('email', 'password'))) {
             \Log::warning('Admin login failed', ['email' => $request->email]);
-            throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
-            ]);
+            return response()->json([
+                'message' => 'Email ou mot de passe incorrect',
+            ], 422);
         }
 
         $request->session()->regenerate();
+        \Log::info('Admin login successful', ['user_id' => Auth::id(), 'session_id' => $request->session()->getId()]);
 
         $user = Auth::user();
         $role = $user->roles->first()?->name;

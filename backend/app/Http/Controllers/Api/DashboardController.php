@@ -21,7 +21,7 @@ class DashboardController extends Controller
             'todayAppointments' => Appointment::whereDate('appointment_date', $today)
                 ->where('status', '!=', 'cancelled')
                 ->count(),
-            'pendingAppointments' => Appointment::where('status', 'pending')->count(),
+            'pendingAppointments' => Appointment::whereIn('status', ['pending', 'requested', 'proposed'])->count(),
             'monthlyRevenue' => Invoice::whereMonth('invoice_date', $today->month)
                 ->whereYear('invoice_date', $today->year)
                 ->sum('total_amount'),

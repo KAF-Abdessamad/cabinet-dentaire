@@ -26,9 +26,9 @@ const Navbar = () => {
                         <Link to="/login" className="bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded-lg transition-colors">
                             Espace Patient
                         </Link>
-                        <a href="/admin/login" className="bg-white text-blue-900 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors">
+                        <Link to="/admin/login" className="bg-white text-blue-900 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors">
                             Espace Cabinet
-                        </a>
+                        </Link>
                     </div>
 
                     {/* Mobile menu button */}
@@ -54,7 +54,7 @@ const Navbar = () => {
                         <Link to="/#about" className="block py-2 hover:bg-blue-800 px-3 rounded">À propos</Link>
                         <Link to="/#contact" className="block py-2 hover:bg-blue-800 px-3 rounded">Contact</Link>
                         <Link to="/login" className="block py-2 hover:bg-blue-800 px-3 rounded mt-4 bg-blue-700 text-center">Espace Patient</Link>
-                        <a href="/admin/login" className="block py-2 hover:bg-blue-800 px-3 rounded mt-2 bg-white text-blue-900 text-center">Espace Cabinet</a>
+                        <Link to="/admin/login" className="block py-2 hover:bg-blue-800 px-3 rounded mt-2 bg-white text-blue-900 text-center">Espace Cabinet</Link>
                     </div>
                 )}
             </div>

@@ -170,9 +170,9 @@
                                 <tbody class="divide-y divide-gray-200">
                                     @foreach($patient->appointments->take(5) as $appointment)
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-3 text-sm text-gray-900">{{ $appointment->appointment_date->format('d/m/Y') }}</td>
-                                            <td class="px-4 py-3 text-sm text-gray-900">{{ $appointment->start_time }} - {{ $appointment->end_time }}</td>
-                                            <td class="px-4 py-3 text-sm text-gray-900">{{ $appointment->reason ?? 'Non spécifié' }}</td>
+                                            <td class="px-4 py-3 text-sm text-gray-900">{{ $appointment->appointment_date ? $appointment->appointment_date->format('d/m/Y') : 'À planifier' }}</td>
+                                            <td class="px-4 py-3 text-sm text-gray-900">{{ $appointment->start_time ?? '--:--' }} - {{ $appointment->end_time ?? '--:--' }}</td>
+                                            <td class="px-4 py-3 text-sm text-gray-900">{{ $appointment->reason ?? ($appointment->treatment->name ?? 'Non spécifié') }}</td>
                                             <td class="px-4 py-3 text-sm text-gray-900">{{ $appointment->dentist->name ?? 'Non assigné' }}</td>
                                             <td class="px-4 py-3">
                                                 <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full 
@@ -239,7 +239,7 @@
                                     @foreach($treatments as $treatment)
                                         <tr class="hover:bg-gray-50">
                                             <td class="px-4 py-3 text-sm text-gray-900">{{ $treatment['name'] }}</td>
-                                            <td class="px-4 py-3 text-sm text-gray-900">{{ $treatment['date']->format('d/m/Y') }}</td>
+                                            <td class="px-4 py-3 text-sm text-gray-900">{{ $treatment['date'] ? $treatment['date']->format('d/m/Y') : 'À planifier' }}</td>
                                             <td class="px-4 py-3 text-sm text-gray-900">{{ $treatment['dentist'] }}</td>
                                             <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($treatment['price'], 2, ',', ' ') }} €</td>
                                         </tr>

@@ -17,7 +17,7 @@ const ProtectedRoute = () => {
     }
 
     if (!user) {
-        return <Navigate to="/login/auth" replace />;
+        return <Navigate to="/login" replace />;
     }
 
     if (user.role && user.role !== 'patient') {

@@ -19,6 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'force.json' => \App\Http\Middleware\ForceJsonResponse::class,
         ]);
+        
+        // Sanctum handles CSRF for stateful domains automatically
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

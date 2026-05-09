@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Invoice;
 use App\Models\User;
+use App\Models\Treatment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -43,6 +44,7 @@ class PatientDashboardController extends Controller
             'upcoming_appointments' => $upcomingAppointments,
             'active_treatments' => $activeTreatments,
             'profile_complete' => $profileComplete,
+            'unread_notifications' => Auth::user()->unreadNotifications()->count(),
         ]);
     }
 
@@ -134,7 +136,7 @@ class PatientDashboardController extends Controller
      */
     public function treatments(): JsonResponse
     {
-        $treatments = \App\Models\Treatment::select('id', 'name', 'price', 'description')
+        $treatments = Treatment::select('id', 'name', 'price', 'description')
             ->orderBy('name')
             ->get();
 
@@ -167,6 +169,18 @@ class PatientDashboardController extends Controller
 
         $appointment = Appointment::create($data)->load(['treatment']);
 
+        // Notify admins about the new appointment request
+        $admins = User::role('admin')->get();
+        foreach ($admins as $admin) {
+            \App\Models\Notification::create([
+                'user_id' => $admin->id,
+                'title' => 'Nouvelle demande de RDV',
+                'message' => "Le patient {$patient->full_name} a demandé un rendez-vous pour : " . ($appointment->treatment->name ?? 'Soin'),
+                'type' => 'info',
+                'link' => '/admin/appointments/' . $appointment->id,
+            ]);
+        }
+
         return response()->json($appointment, 201);
     }
 
@@ -186,7 +200,38 @@ class PatientDashboardController extends Controller
             return response()->json(['message' => 'Ce rendez-vous ne peut pas être confirmé.'], 422);
         }
 
+        // Check if slot is still available
+        $conflict = Appointment::where('user_id', $appointment->user_id)
+            ->where('appointment_date', $appointment->appointment_date)
+            ->where('id', '!=', $appointment->id)
+            ->where('status', 'confirmed')
+            ->where(function ($query) use ($appointment) {
+                $query->whereBetween('start_time', [$appointment->start_time, $appointment->end_time])
+                      ->orWhereBetween('end_time', [$appointment->start_time, $appointment->end_time])
+                      ->orWhere(function ($q) use ($appointment) {
+                          $q->where('start_time', '<=', $appointment->start_time)
+                            ->where('end_time', '>=', $appointment->end_time);
+                      });
+            })
+            ->exists();
+
+        if ($conflict) {
+            return response()->json(['message' => 'Désolé, ce créneau n\'est plus disponible. Veuillez nous contacter ou attendre une nouvelle proposition.'], 422);
+        }
+
         $appointment->update(['status' => 'confirmed']);
+
+        // Notify admins about the confirmation
+        $admins = User::role('admin')->get();
+        foreach ($admins as $admin) {
+            \App\Models\Notification::create([
+                'user_id' => $admin->id,
+                'title' => 'RDV Confirmé par le patient',
+                'message' => "Le patient {$patient->full_name} a accepté la proposition de créneau pour le " . $appointment->appointment_date->format('d/m/Y'),
+                'type' => 'success',
+                'link' => '/admin/appointments/' . $appointment->id,
+            ]);
+        }
 
         return response()->json(['message' => 'Rendez-vous confirmé avec succès.', 'appointment' => $appointment->load('dentist', 'treatment')]);
     }
@@ -208,6 +253,18 @@ class PatientDashboardController extends Controller
         }
 
         $appointment->update(['status' => 'requested', 'appointment_date' => null, 'start_time' => null, 'end_time' => null]);
+
+        // Notify admins about the rejection
+        $admins = User::role('admin')->get();
+        foreach ($admins as $admin) {
+            \App\Models\Notification::create([
+                'user_id' => $admin->id,
+                'title' => 'Proposition de RDV refusée',
+                'message' => "Le patient {$patient->full_name} a refusé la proposition de créneau. Sa demande est repassée en attente.",
+                'type' => 'warning',
+                'link' => '/admin/appointments/' . $appointment->id,
+            ]);
+        }
 
         return response()->json(['message' => 'Proposition refusée. Votre demande repasse en attente.', 'appointment' => $appointment->load('treatment')]);
     }

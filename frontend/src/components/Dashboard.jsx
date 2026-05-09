@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api.js';
 
 const Dashboard = () => {
     const [stats, setStats] = useState({
@@ -17,7 +17,7 @@ const Dashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
-            const response = await axios.get('/api/dashboard/stats');
+            const response = await api.get('/api/dashboard/stats');
             setStats(response.data);
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
