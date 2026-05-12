@@ -17,6 +17,8 @@ class Appointment extends Model
         'patient_id',
         'user_id',
         'treatment_id',
+        'starts_at',
+        'ends_at',
         'appointment_date',
         'start_time',
         'end_time',
@@ -28,7 +30,42 @@ class Appointment extends Model
 
     protected $casts = [
         'appointment_date' => 'date',
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
     ];
+
+    protected static function booted()
+    {
+        static::saving(function ($appointment) {
+            // Block modifications for past appointments (except status to completed/cancelled)
+            if ($appointment->exists && $appointment->isDirty() && $appointment->getOriginal('starts_at')) {
+                $originalStartsAt = \Carbon\Carbon::parse($appointment->getOriginal('starts_at'));
+                if ($originalStartsAt->isPast()) {
+                    // Only allow status changes to 'completed' or 'cancelled' if already past
+                    $dirty = $appointment->getDirty();
+                    if (count($dirty) > 1 || !isset($dirty['status']) || !in_array($dirty['status'], ['completed', 'cancelled'])) {
+                        throw new \Exception("Impossible de modifier un rendez-vous passé.");
+                    }
+                }
+            }
+
+            // Sync starts_at/ends_at with appointment_date/start_time if they are dirty
+            if ($appointment->appointment_date && $appointment->start_time) {
+                $date = $appointment->appointment_date instanceof \Carbon\Carbon 
+                    ? $appointment->appointment_date->format('Y-m-d') 
+                    : $appointment->appointment_date;
+                
+                $appointment->starts_at = \Carbon\Carbon::parse($date . ' ' . $appointment->start_time);
+                
+                if ($appointment->end_time) {
+                    $appointment->ends_at = \Carbon\Carbon::parse($date . ' ' . $appointment->end_time);
+                } else {
+                    // Default to 30 mins if end_time not set
+                    $appointment->ends_at = (clone $appointment->starts_at)->addMinutes(30);
+                }
+            }
+        });
+    }
 
     public function patient(): BelongsTo
     {

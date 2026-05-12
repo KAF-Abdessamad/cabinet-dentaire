@@ -24,6 +24,9 @@ class AppointmentPolicy
 
     public function update(User $user, Appointment $appointment): bool
     {
+        // Block updates for past appointments unless it's an admin or special case
+        // But we already handle this in the model's 'saving' event for absolute safety.
+        
         if ($user->hasRole('admin')) {
             return true;
         }

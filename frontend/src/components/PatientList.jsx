@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, UserPlus, MoreVertical, Eye, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, UserPlus, MoreVertical, Eye, Edit, Trash2, ChevronLeft, ChevronRight, Phone, Mail, IdCard, Calendar } from 'lucide-react';
+import { motion } from 'framer-motion';
 import api from '../api.js';
 
 const PatientList = () => {
@@ -46,142 +47,148 @@ const PatientList = () => {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-slate-800">Liste des Patients</h1>
-                <button className="px-4 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 transition">
-                    + Nouveau Patient
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-12 max-w-7xl mx-auto"
+        >
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                    <h1 className="text-4xl font-black text-slate-800 tracking-tight">Répertoire Patients</h1>
+                    <p className="text-slate-500 font-bold mt-2 italic">Gérez et consultez les dossiers de vos patients.</p>
+                </div>
+                <button className="flex items-center gap-3 px-8 py-4 bg-medical-600 text-white rounded-2xl hover:bg-medical-700 transition-all shadow-xl shadow-medical-200 font-black group">
+                    <UserPlus className="h-5 w-5" />
+                    NOUVEAU DOSSIER
                 </button>
             </div>
 
             {/* Search Bar */}
-            <div className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="bg-white rounded-[32px] p-2 shadow-xl shadow-slate-100/50 border border-slate-100">
                 <form onSubmit={handleSearch} className="flex gap-4">
-                    <div className="flex-1 relative">
+                    <div className="flex-1 relative group">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-medical-600 transition-colors">
+                            <Search size={20} strokeWidth={2.5} />
+                        </div>
                         <input
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Rechercher par nom, email, téléphone ou CIN..."
-                            className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-medical-500"
+                            className="w-full pl-16 pr-6 py-5 bg-slate-50 border-none rounded-[24px] text-slate-700 font-bold focus:bg-white focus:ring-4 focus:ring-medical-500/10 transition-all outline-none"
                         />
-                        <button
-                            type="submit"
-                            className="absolute right-3 top-2.5 text-slate-400 hover:text-medical-600"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-                        </button>
                     </div>
                 </form>
             </div>
 
             {/* Patients Table */}
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                <table className="w-full">
-                    <thead className="bg-slate-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                Patient
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                Contact
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                CIN
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                Dernière Visite
-                            </th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {loading ? (
-                            <tr>
-                                <td colSpan="5" className="px-6 py-8 text-center text-slate-500">
-                                    Chargement...
-                                </td>
+            <div className="bg-white rounded-[40px] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="bg-slate-50/50 border-b border-slate-100">
+                                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    Identité Patient
+                                </th>
+                                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    Coordonnées
+                                </th>
+                                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    Détails Administratifs
+                                </th>
+                                <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    Actions
+                                </th>
                             </tr>
-                        ) : patients.length === 0 ? (
-                            <tr>
-                                <td colSpan="5" className="px-6 py-8 text-center text-slate-500">
-                                    Aucun patient trouvé
-                                </td>
-                            </tr>
-                        ) : (
-                            patients.map((patient) => (
-                                <tr key={patient.id} className="hover:bg-slate-50">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center">
-                                            <div className="w-10 h-10 bg-medical-100 rounded-full flex items-center justify-center text-medical-600 font-medium">
-                                                {patient.first_name?.charAt(0)}{patient.last_name?.charAt(0)}
-                                            </div>
-                                            <div className="ml-3">
-                                                <p className="font-medium text-slate-800">
-                                                    {patient.first_name} {patient.last_name}
-                                                </p>
-                                                <p className="text-sm text-slate-500">
-                                                    ID: #{String(patient.id).padStart(5, '0')}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <p className="text-sm text-slate-600">{patient.phone || 'N/A'}</p>
-                                        <p className="text-sm text-slate-400">{patient.email}</p>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <p className="text-sm text-slate-600">{patient.cin || 'N/A'}</p>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <p className="text-sm text-slate-600">
-                                            {patient.last_visit || 'Jamais'}
-                                        </p>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button className="text-medical-600 hover:text-medical-800 font-medium text-sm">
-                                            Voir dossier →
-                                        </button>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan="4" className="px-8 py-20 text-center">
+                                        <div className="animate-spin rounded-full h-10 w-10 border-4 border-medical-500 border-t-transparent mx-auto" />
+                                        <p className="text-slate-400 font-bold mt-4">Chargement de la liste...</p>
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : patients.length === 0 ? (
+                                <tr>
+                                    <td colSpan="4" className="px-8 py-20 text-center text-slate-400 font-bold italic">
+                                        Aucun patient trouvé.
+                                    </td>
+                                </tr>
+                            ) : (
+                                patients.map((patient) => (
+                                    <tr key={patient.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <td className="px-8 py-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-[14px] bg-medical-50 text-medical-600 flex items-center justify-center font-black text-lg group-hover:bg-medical-600 group-hover:text-white transition-all">
+                                                    {patient.first_name?.[0]}{patient.last_name?.[0]}
+                                                </div>
+                                                <div>
+                                                    <p className="text-slate-800 font-black">{patient.first_name} {patient.last_name}</p>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Inscrit le {new Date(patient.created_at).toLocaleDateString('fr-FR')}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2 text-slate-500 font-bold text-sm">
+                                                    <Phone size={12} className="text-slate-300" /> {patient.phone || '—'}
+                                                </div>
+                                                <div className="flex items-center gap-2 text-slate-400 font-medium text-xs">
+                                                    <Mail size={12} className="text-slate-200" /> {patient.email || '—'}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <div className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg w-fit">
+                                                <IdCard size={14} className="text-slate-400" />
+                                                <span className="text-xs font-black text-slate-600 tracking-wider">{patient.cin || 'SANS CIN'}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-6 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <button className="p-2 rounded-xl text-slate-400 hover:bg-white hover:text-medical-600 hover:shadow-md transition-all">
+                                                    <Eye size={18} />
+                                                </button>
+                                                <button className="p-2 rounded-xl text-slate-400 hover:bg-white hover:text-amber-600 hover:shadow-md transition-all">
+                                                    <Edit size={18} />
+                                                </button>
+                                                <button className="p-2 rounded-xl text-slate-400 hover:bg-white hover:text-red-600 hover:shadow-md transition-all">
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
 
                 {/* Pagination */}
-                {!loading && patients.length > 0 && (
-                    <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
-                        <p className="text-sm text-slate-500">
-                            Total: {pagination.total} patients
-                        </p>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setPagination({ ...pagination, currentPage: pagination.currentPage - 1 })}
-                                disabled={pagination.currentPage === 1}
-                                className="px-3 py-1 border border-slate-200 rounded-lg disabled:opacity-50 hover:bg-slate-50"
-                            >
-                                ← Précédent
-                            </button>
-                            <span className="px-3 py-1 text-sm text-slate-600">
-                                Page {pagination.currentPage} / {pagination.lastPage}
-                            </span>
-                            <button
-                                onClick={() => setPagination({ ...pagination, currentPage: pagination.currentPage + 1 })}
-                                disabled={pagination.currentPage === pagination.lastPage}
-                                className="px-3 py-1 border border-slate-200 rounded-lg disabled:opacity-50 hover:bg-slate-50"
-                            >
-                                Suivant →
-                            </button>
-                        </div>
+                <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+                    <p className="text-xs font-bold text-slate-400">
+                        Affichage de {patients.length} sur {pagination.total} patients
+                    </p>
+                    <div className="flex gap-2">
+                        <button 
+                            disabled={pagination.currentPage === 1}
+                            onClick={() => setPagination({...pagination, currentPage: pagination.currentPage - 1})}
+                            className="p-2 rounded-xl border border-slate-200 text-slate-400 hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                        >
+                            <ChevronLeft size={20} />
+                        </button>
+                        <button 
+                            disabled={pagination.currentPage === pagination.lastPage}
+                            onClick={() => setPagination({...pagination, currentPage: pagination.currentPage + 1})}
+                            className="p-2 rounded-xl border border-slate-200 text-slate-400 hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                        >
+                            <ChevronRight size={20} />
+                        </button>
                     </div>
-                )}
+                </div>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

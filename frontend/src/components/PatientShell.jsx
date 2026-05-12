@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Smile, LayoutDashboard, Home, LogOut, Menu, X } from 'lucide-react';
+import { Smile, LayoutDashboard, Home, LogOut, Menu, X, Heart, ShieldCheck } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api.js';
+import logo from '../img/logo-removebg-preview.png';
 
 const navLinkClass = (active) =>
-    `flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
+    `relative flex items-center gap-3 rounded-2xl px-6 py-3.5 text-sm font-black transition-all duration-300 ${
         active
-            ? 'bg-white text-dentist-deeper shadow-md shadow-dentist-primary/15'
-            : 'text-white/85 hover:bg-white/10 hover:text-white'
+            ? 'text-medical-600'
+            : 'text-slate-500 hover:bg-slate-50'
     }`;
 
 const PatientShell = ({ children }) => {
@@ -19,115 +21,133 @@ const PatientShell = ({ children }) => {
             await api.get('/sanctum/csrf-cookie');
             await api.post('/api/logout');
         } catch {
-            // On force la redirection même si le serveur a déjà fermé la session
+            // Force redirection
         }
         window.location.href = '/login';
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-gradient-to-br from-dentist-soft via-white to-dentist-surface animate-fade-in">
-            <header className="sticky top-0 z-40 backdrop-blur-md bg-dentist-deeper/95 border-b border-white/10 shadow-lg shadow-dentist-primary/10">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+        <div className="min-h-screen flex flex-col bg-slate-50">
+            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between gap-4">
                     <Link
                         to="/patient/dashboard"
-                        className="flex items-center gap-3 text-white group"
+                        className="flex items-center gap-4 text-slate-800 group"
                     >
-                        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 ring-2 ring-white/25 transition-transform duration-300 group-hover:scale-105">
-                            <Smile className="h-6 w-6 text-white" strokeWidth={2} />
-                        </span>
-                        <div>
-                            <span className="block text-lg font-bold tracking-tight">Cabinet Smile</span>
-                            <span className="text-xs text-white/70">Espace patient</span>
+                        <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-white shadow-lg shadow-slate-200 overflow-hidden border border-slate-50 transition-transform duration-300 group-hover:scale-105">
+                            <img src={logo} alt="SmilePro" className="h-full w-full object-contain p-2" />
+                        </div>
+                        <div className="hidden sm:block">
+                            <span className="block text-xl font-black tracking-tight leading-none">SmilePro</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Espace Patient</span>
                         </div>
                     </Link>
 
-                    <nav className="hidden md:flex items-center gap-1">
+                    <nav className="hidden md:flex items-center gap-2">
                         <Link
                             to="/patient/dashboard"
                             className={navLinkClass(location.pathname === '/patient/dashboard')}
                         >
-                            <LayoutDashboard className="h-4 w-4" strokeWidth={2} />
-                            Tableau de bord
+                            {location.pathname === '/patient/dashboard' && (
+                                <motion.div 
+                                    layoutId="patientNav"
+                                    className="absolute inset-0 bg-medical-50 rounded-2xl"
+                                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                />
+                            )}
+                            <LayoutDashboard className="h-5 w-5 relative z-10" strokeWidth={2.5} />
+                            <span className="relative z-10">Tableau de bord</span>
                         </Link>
-                        <Link to="/" className={navLinkClass(false)}>
-                            <Home className="h-4 w-4" strokeWidth={2} />
-                            Site
-                        </Link>
-                        <button
-                            type="button"
-                            onClick={handleLogout}
-                            className="ml-2 flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
-                        >
-                            <LogOut className="h-4 w-4" strokeWidth={2} />
-                            Déconnexion
-                        </button>
+                        
+                        <div className="w-px h-6 bg-slate-200 mx-4" />
+
+                        <div className="flex items-center gap-3">
+                            <Link to="/" className="p-3 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-medical-600 transition-all">
+                                <Home className="h-5 w-5" strokeWidth={2.5} />
+                            </Link>
+                            <button
+                                type="button"
+                                onClick={handleLogout}
+                                className="w-12 h-12 bg-slate-100 rounded-[16px] flex items-center justify-center text-slate-500 hover:bg-red-50 hover:text-red-500 transition-all group shadow-sm"
+                            >
+                                <LogOut className="h-5 w-5 group-hover:-translate-x-1 transition-transform" strokeWidth={2.5} />
+                            </button>
+                        </div>
                     </nav>
 
                     <div className="flex md:hidden items-center gap-2">
                         <button
                             type="button"
-                            aria-label={mobileNav ? 'Fermer le menu' : 'Ouvrir le menu'}
                             onClick={() => setMobileNav(!mobileNav)}
-                            className="p-2 rounded-xl text-white bg-white/10 border border-white/20"
+                            className="p-3 rounded-2xl text-slate-600 bg-slate-100"
                         >
                             {mobileNav ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                         </button>
                     </div>
                 </div>
 
-                {mobileNav && (
-                    <div className="md:hidden px-4 pb-4 animate-slide-down space-y-1 border-t border-white/10 mt-2 pt-3 bg-dentist-deeper">
-                        <Link
-                            to="/patient/dashboard"
-                            onClick={() => setMobileNav(false)}
-                            className={navLinkClass(location.pathname === '/patient/dashboard')}
+                <AnimatePresence>
+                    {mobileNav && (
+                        <motion.div 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="md:hidden px-4 pb-6 border-t border-slate-100 bg-white"
                         >
-                            <LayoutDashboard className="h-4 w-4" />
-                            Tableau de bord
-                        </Link>
-                        <Link
-                            to="/"
-                            onClick={() => setMobileNav(false)}
-                            className={navLinkClass(false)}
-                        >
-                            <Home className="h-4 w-4" />
-                            Site public
-                        </Link>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setMobileNav(false);
-                                handleLogout();
-                            }}
-                            className="w-full flex items-center gap-2 rounded-xl bg-white text-dentist-deeper px-4 py-3 text-sm font-semibold shadow"
-                        >
-                            <LogOut className="h-4 w-4" />
-                            Déconnexion
-                        </button>
-                    </div>
-                )}
+                            <div className="space-y-2 mt-4">
+                                <Link
+                                    to="/patient/dashboard"
+                                    onClick={() => setMobileNav(false)}
+                                    className={navLinkClass(location.pathname === '/patient/dashboard')}
+                                >
+                                    <LayoutDashboard className="h-5 w-5" />
+                                    Tableau de bord
+                                </Link>
+                                <Link
+                                    to="/"
+                                    onClick={() => setMobileNav(false)}
+                                    className={navLinkClass(false)}
+                                >
+                                    <Home className="h-5 w-5" />
+                                    Site public
+                                </Link>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setMobileNav(false);
+                                        handleLogout();
+                                    }}
+                                    className="w-full flex items-center gap-3 rounded-2xl px-6 py-4 text-sm font-black text-red-500 hover:bg-red-50 transition-all"
+                                >
+                                    <LogOut className="h-5 w-5" />
+                                    Déconnexion
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </header>
 
-            <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
                 {children}
             </main>
 
-            <footer className="border-t border-dentist-muted/40 bg-white/70 backdrop-blur mt-auto">
-                <div className="max-w-6xl mx-auto px-4 py-10 flex flex-col sm:flex-row items-center justify-between gap-6 text-sm text-slate-600">
-                    <div className="flex items-center gap-3">
-                        <Smile className="h-8 w-8 text-dentist-primary shrink-0" strokeWidth={1.75} />
-                        <div>
-                            <span className="font-semibold text-dentist-deeper block">Cabinet Smile</span>
-                            <span className="text-slate-500">Soins dentaires • suivi en ligne sécurisé</span>
+            <footer className="bg-white border-t border-slate-100 py-12 mt-auto">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
+                                <ShieldCheck size={20} />
+                            </div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                SmilePro — Votre santé, notre priorité
+                            </p>
                         </div>
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-6">
-                        <Link to="/" className="hover:text-dentist-primary transition-colors">
-                            Accueil
-                        </Link>
-                        <Link to="/admin/login" className="hover:text-dentist-primary transition-colors">
-                            Espace professionnel
-                        </Link>
+                        <div className="flex items-center gap-6">
+                            <a href="#" className="text-xs font-black text-slate-400 hover:text-medical-600 transition-colors">AIDE</a>
+                            <a href="#" className="text-xs font-black text-slate-400 hover:text-medical-600 transition-colors">CONFIDENTIALITÉ</a>
+                            <a href="#" className="text-xs font-black text-slate-400 hover:text-medical-600 transition-colors">CONTACT</a>
+                        </div>
                     </div>
                 </div>
             </footer>

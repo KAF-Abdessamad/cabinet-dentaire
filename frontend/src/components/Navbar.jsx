@@ -1,63 +1,74 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Smile, Menu, X, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import logo from '../img/logo-removebg-preview.png';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <nav className="bg-blue-900 text-white shadow-lg fixed w-full top-0 z-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
+        <nav className="fixed w-full top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 h-24 flex items-center">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                <div className="flex items-center justify-between h-full">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center space-x-3">
-                        <div className="bg-white p-1 rounded-full overflow-hidden w-12 h-12 flex items-center justify-center">
-                            <img src={logo} alt="Cabinet Dentaire Logo" className="w-full h-full object-contain" />
+                    <Link to="/" className="flex items-center gap-4 text-slate-800 group">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-white shadow-lg shadow-slate-200 overflow-hidden transition-transform duration-300 group-hover:scale-105 border border-slate-50">
+                            <img src={logo} alt="SmilePro Logo" className="h-full w-full object-contain p-2" />
                         </div>
-                        <span className="text-xl font-bold">Cabinet Dentaire</span>
+                        <div>
+                            <span className="block text-xl font-black tracking-tight leading-none">SmilePro</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cabinet Dentaire</span>
+                        </div>
                     </Link>
 
                     {/* Desktop Menu */}
-                    <div className="hidden md:flex items-center space-x-8">
-                        <Link to="/" className="hover:text-blue-200 transition-colors">Accueil</Link>
-                        <Link to="/#services" className="hover:text-blue-200 transition-colors">Services</Link>
-                        <Link to="/#about" className="hover:text-blue-200 transition-colors">À propos</Link>
-                        <Link to="/#contact" className="hover:text-blue-200 transition-colors">Contact</Link>
-                        <Link to="/login" className="bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded-lg transition-colors">
-                            Espace Patient
+                    <div className="hidden lg:flex items-center space-x-2">
+                        <a href="#home" onClick={(e) => { e.preventDefault(); window.scrollTo({top: 0, behavior: 'smooth'}); }} className="px-5 py-3 text-sm font-black text-slate-600 hover:text-medical-600 hover:bg-slate-50 rounded-xl transition-all">Accueil</a>
+                        <a href="#services" onClick={(e) => { e.preventDefault(); document.getElementById('services')?.scrollIntoView({behavior: 'smooth'}); }} className="px-5 py-3 text-sm font-black text-slate-600 hover:text-medical-600 hover:bg-slate-50 rounded-xl transition-all">Services</a>
+                        <a href="#contact" onClick={(e) => { e.preventDefault(); document.getElementById('contact')?.scrollIntoView({behavior: 'smooth'}); }} className="px-5 py-3 text-sm font-black text-slate-600 hover:text-medical-600 hover:bg-slate-50 rounded-xl transition-all">Contact</a>
+                        
+                        <div className="w-px h-6 bg-slate-200 mx-4" />
+                        
+                        <Link to="/login" className="px-6 py-3 text-sm font-black text-slate-600 hover:text-medical-600 transition-all flex items-center gap-2 group">
+                            ESPACE PATIENT
                         </Link>
-                        <Link to="/admin/login" className="bg-white text-blue-900 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors">
-                            Espace Cabinet
+                        <Link to="/admin/login" className="ml-4 px-8 py-3.5 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-medical-600 transition-all shadow-xl shadow-slate-200 flex items-center gap-2 group">
+                            ESPACE CABINET
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </Link>
                     </div>
 
                     {/* Mobile menu button */}
                     <button
                         onClick={() => setIsOpen(!isOpen)}
-                        className="md:hidden inline-flex items-center justify-center p-2 rounded-md hover:bg-blue-800"
+                        className="lg:hidden p-3 rounded-2xl bg-slate-100 text-slate-600 transition-all"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            {isOpen ? (
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            ) : (
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                            )}
-                        </svg>
+                        {isOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
                 </div>
-
-                {/* Mobile Menu */}
-                {isOpen && (
-                    <div className="md:hidden pb-4">
-                        <Link to="/" className="block py-2 hover:bg-blue-800 px-3 rounded">Accueil</Link>
-                        <Link to="/#services" className="block py-2 hover:bg-blue-800 px-3 rounded">Services</Link>
-                        <Link to="/#about" className="block py-2 hover:bg-blue-800 px-3 rounded">À propos</Link>
-                        <Link to="/#contact" className="block py-2 hover:bg-blue-800 px-3 rounded">Contact</Link>
-                        <Link to="/login" className="block py-2 hover:bg-blue-800 px-3 rounded mt-4 bg-blue-700 text-center">Espace Patient</Link>
-                        <Link to="/admin/login" className="block py-2 hover:bg-blue-800 px-3 rounded mt-2 bg-white text-blue-900 text-center">Espace Cabinet</Link>
-                    </div>
-                )}
             </div>
+
+            {/* Mobile Menu */}
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="lg:hidden absolute top-24 left-0 w-full bg-white border-b border-slate-100 overflow-hidden shadow-2xl"
+                    >
+                        <div className="px-4 py-8 space-y-4">
+                            <Link to="/" onClick={() => setIsOpen(false)} className="block p-4 text-sm font-black text-slate-600 hover:bg-slate-50 rounded-2xl transition-all">Accueil</Link>
+                            <a href="#services" onClick={() => setIsOpen(false)} className="block p-4 text-sm font-black text-slate-600 hover:bg-slate-50 rounded-2xl transition-all">Services</a>
+                            <a href="#about" onClick={() => setIsOpen(false)} className="block p-4 text-sm font-black text-slate-600 hover:bg-slate-50 rounded-2xl transition-all">À propos</a>
+                            <div className="h-px bg-slate-100 mx-4" />
+                            <Link to="/login" onClick={() => setIsOpen(false)} className="block p-4 text-sm font-black text-slate-600 hover:bg-slate-50 rounded-2xl transition-all uppercase tracking-widest">Espace Patient</Link>
+                            <Link to="/admin/login" onClick={() => setIsOpen(false)} className="block p-6 bg-slate-900 text-white text-center text-xs font-black uppercase tracking-widest rounded-[24px] shadow-xl shadow-slate-200">Espace Cabinet</Link>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </nav>
     );
 };

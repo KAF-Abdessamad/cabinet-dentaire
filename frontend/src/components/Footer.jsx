@@ -1,60 +1,99 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Smile, Mail, Phone, MapPin, ShieldCheck, Globe, MessageCircle, ExternalLink } from 'lucide-react';
 import logo from '../img/logo-removebg-preview.png';
 
 const Footer = () => {
     return (
-        <footer className="bg-blue-900 text-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                    {/* Logo et description */}
-                    <div>
-                        <div className="flex items-center space-x-3 mb-4">
-                            <div className="bg-white p-1 rounded-full overflow-hidden w-12 h-12 flex items-center justify-center">
-                                <img src={logo} alt="Cabinet Dentaire Logo" className="w-full h-full object-contain" />
+        <footer className="bg-slate-900 text-white pt-24 pb-12 overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-medical-500 to-indigo-600" />
+            
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-16 mb-20">
+                    {/* Brand */}
+                    <div className="lg:col-span-1 space-y-8">
+                        <Link to="/" className="flex items-center gap-4 group">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-white shadow-lg overflow-hidden border border-white/10 transition-transform duration-300 group-hover:scale-105">
+                                <img src={logo} alt="SmilePro Logo" className="h-full w-full object-contain p-2" />
                             </div>
-                            <span className="text-xl font-bold">Cabinet Dentaire</span>
-                        </div>
-                        <p className="text-blue-200 text-sm">
-                            Votre sourire, notre priorité depuis 2026.
+                            <div>
+                                <span className="block text-2xl font-black tracking-tight leading-none">SmilePro</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Clinique Dentaire</span>
+                            </div>
+                        </Link>
+                        <p className="text-slate-400 font-medium leading-relaxed">
+                            Offrir des soins dentaires d'exception avec une approche personnalisée et technologique. Votre sourire est notre engagement quotidien.
                         </p>
+                        <div className="flex gap-4">
+                            {[Globe, MessageCircle, ExternalLink].map((Icon, i) => (
+                                <a key={i} href="#" className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:bg-medical-600 hover:text-white transition-all">
+                                    <Icon size={18} />
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Quick Links */}
+                    <div>
+                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-medical-500 mb-8">Navigation</h3>
+                        <ul className="space-y-4">
+                            {['Accueil', 'Nos Services', 'L\'Équipe', 'Contact'].map((item) => (
+                                <li key={item}>
+                                    <a href="#" className="text-slate-400 hover:text-white font-bold transition-colors">{item}</a>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
 
                     {/* Services */}
                     <div>
-                        <h3 className="text-lg font-semibold mb-4">Services</h3>
-                        <ul className="space-y-2 text-blue-200 text-sm">
-                            <li>Consultations</li>
-                            <li>Soins dentaires</li>
-                            <li>Orthodontie</li>
-                            <li>Implants</li>
-                            <li>Blanchiment</li>
+                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-medical-500 mb-8">Spécialités</h3>
+                        <ul className="space-y-4">
+                            {['Implantologie', 'Esthétique', 'Orthodontie', 'Parodontie'].map((item) => (
+                                <li key={item}>
+                                    <a href="#" className="text-slate-400 hover:text-white font-bold transition-colors">{item}</a>
+                                </li>
+                            ))}
                         </ul>
                     </div>
 
-                    {/* Horaires */}
-                    <div>
-                        <h3 className="text-lg font-semibold mb-4">Horaires</h3>
-                        <ul className="space-y-2 text-blue-200 text-sm">
-                            <li>Lundi - Vendredi: 9h - 18h</li>
-                            <li>Samedi: 9h - 13h</li>
-                            <li>Dimanche: Fermé</li>
-                        </ul>
-                    </div>
-
-                    {/* Contact */}
-                    <div>
-                        <h3 className="text-lg font-semibold mb-4">Contact</h3>
-                        <ul className="space-y-2 text-blue-200 text-sm">
-                            <li>📍 123 Rue de la Santé, Paris</li>
-                            <li>📞 01 23 45 67 89</li>
-                            <li>✉️ contact@cabinet.com</li>
-                        </ul>
+                    {/* Contact Info */}
+                    <div className="space-y-8">
+                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-medical-500 mb-8">Nous Trouver</h3>
+                        <div className="space-y-6">
+                            <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-medical-500 shrink-0">
+                                    <MapPin size={18} />
+                                </div>
+                                <p className="text-slate-400 font-bold text-sm">123 Boulevard Mohammed V, Casablanca, Maroc</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-medical-500 shrink-0">
+                                    <Phone size={18} />
+                                </div>
+                                <p className="text-slate-400 font-bold text-sm">+212 5 22 00 00 00</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-medical-500 shrink-0">
+                                    <Mail size={18} />
+                                </div>
+                                <p className="text-slate-400 font-bold text-sm">contact@smilepro.ma</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div className="border-t border-blue-800 mt-8 pt-8 text-center text-blue-200 text-sm">
-                    <p>© 2026 Cabinet Dentaire - Tous droits réservés</p>
+                {/* Bottom Bar */}
+                <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+                    <div className="flex items-center gap-3">
+                        <ShieldCheck className="text-medical-500" size={20} />
+                        <p className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                            SmilePro — Établissement de Santé Agréé
+                        </p>
+                    </div>
+                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">
+                        © 2026 SMILEPRO CLINIC. TOUS DROITS RÉSERVÉS.
+                    </p>
                 </div>
             </div>
         </footer>

@@ -1,5 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { 
+    Users, 
+    Calendar, 
+    Clock, 
+    CreditCard, 
+    TrendingUp, 
+    Plus, 
+    ArrowUpRight,
+    UserPlus,
+    CheckCircle2,
+    CalendarCheck,
+    CalendarPlus
+} from 'lucide-react';
+import { motion } from 'framer-motion';
 import api from '../api.js';
 
 const Dashboard = () => {
@@ -26,157 +40,163 @@ const Dashboard = () => {
         }
     };
 
-    const StatCard = ({ title, value, icon, color }) => (
-        <div 
-            className={`bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer border-l-4 ${color}`}
+    const StatCard = ({ title, value, icon: Icon, color, trend }) => (
+        <motion.div 
+            whileHover={{ y: -5 }}
+            className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 relative overflow-hidden group"
         >
-            <div className="flex items-center justify-between">
+            <div className="relative z-10 flex justify-between items-start">
                 <div>
-                    <p className="text-slate-500 text-sm font-medium">{title}</p>
-                    <p className="text-3xl font-bold text-slate-800 mt-2">
-                        {loading ? '...' : value}
-                    </p>
+                    <p className="text-slate-400 text-xs font-black uppercase tracking-widest mb-4">{title}</p>
+                    <div className="flex items-baseline gap-2">
+                        <h3 className="text-4xl font-black text-slate-800">
+                            {loading ? '...' : value}
+                        </h3>
+                        {trend && (
+                            <span className="text-emerald-500 text-xs font-bold flex items-center">
+                                <ArrowUpRight className="h-3 w-3" /> {trend}
+                            </span>
+                        )}
+                    </div>
                 </div>
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-opacity-10 ${color.replace('border-', 'bg-')}`}>
-                    {icon}
+                <div className={`p-4 rounded-2xl bg-slate-50 text-slate-400 group-hover:bg-medical-500 group-hover:text-white transition-all duration-300`}>
+                    <Icon size={24} strokeWidth={2.5} />
                 </div>
             </div>
-        </div>
+            <div className="absolute -bottom-6 -right-6 text-slate-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                <Icon size={120} strokeWidth={1} />
+            </div>
+        </motion.div>
     );
 
     return (
-        <div className="space-y-8">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-slate-800">Tableau de Bord</h1>
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-12 max-w-7xl mx-auto"
+        >
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                    <h1 className="text-4xl font-black text-slate-800 tracking-tight">Bonjour, Cabinet 👋</h1>
+                    <p className="text-slate-500 font-bold mt-2 italic">Voici l'activité de votre clinique aujourd'hui.</p>
+                </div>
                 <Link 
                     to="/app/appointments"
-                    className="px-4 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 transition"
+                    className="flex items-center gap-3 px-8 py-4 bg-medical-600 text-white rounded-2xl hover:bg-medical-700 transition-all shadow-xl shadow-medical-200 font-black group"
                 >
-                    + Nouveau Rendez-vous
+                    <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform" />
+                    NOUVEAU RENDEZ-VOUS
                 </Link>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <Link to="/app/patients">
                     <StatCard
-                        title="Total Patients"
+                        title="Patients Totaux"
                         value={stats.totalPatients}
-                        icon="👥"
-                        color="border-medical-500"
+                        icon={Users}
+                        trend="+12%"
                     />
                 </Link>
                 <Link to="/app/appointments">
                     <StatCard
-                        title="Rendez-vous Aujourd'hui"
+                        title="RDV du Jour"
                         value={stats.todayAppointments}
-                        icon="📅"
-                        color="border-green-500"
+                        icon={Calendar}
                     />
                 </Link>
                 <Link to="/app/appointments">
                     <StatCard
                         title="En Attente"
                         value={stats.pendingAppointments}
-                        icon="⏳"
-                        color="border-yellow-500"
+                        icon={Clock}
                     />
                 </Link>
                 <StatCard
-                    title="Revenus du Mois"
-                    value={`${stats.monthlyRevenue.toLocaleString()} €`}
-                    icon="💰"
-                    color="border-blue-500"
+                    title="Chiffre d'Affaires"
+                    value={`${stats.monthlyRevenue.toLocaleString()} MAD`}
+                    icon={CreditCard}
+                    trend="+8%"
                 />
             </div>
 
-            {/* Recent Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white rounded-2xl shadow-sm p-6">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Activité Récente</h3>
-                    <div className="space-y-4">
-                        <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl">
-                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                📅
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-medium text-slate-800">Nouveau rendez-vous</p>
-                                <p className="text-sm text-slate-500">Patient: Jean Dupont - 14:30</p>
-                            </div>
-                            <span className="text-xs text-slate-400">Il y a 5 min</span>
-                        </div>
-                        <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                👤
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-medium text-slate-800">Nouveau patient</p>
-                                <p className="text-sm text-slate-500">Marie Martin enregistrée</p>
-                            </div>
-                            <span className="text-xs text-slate-400">Il y a 15 min</span>
-                        </div>
-                        <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl">
-                            <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                                💳
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-medium text-slate-800">Paiement reçu</p>
-                                <p className="text-sm text-slate-500">Facture #1234 - 150€</p>
-                            </div>
-                            <span className="text-xs text-slate-400">Il y a 30 min</span>
-                        </div>
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
+                {/* Activity Feed */}
+                <div className="xl:col-span-2 space-y-8">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
+                            <TrendingUp className="text-medical-500" /> 
+                            Flux d'activité
+                        </h3>
+                        <button className="text-sm font-bold text-medical-600 hover:underline">Voir tout</button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-4">
+                        {[
+                            { icon: CalendarPlus, color: 'bg-emerald-50 text-emerald-600', title: 'Nouveau RDV', desc: 'Jean Dupont - 14:30', time: '5 min' },
+                            { icon: UserPlus, color: 'bg-blue-50 text-blue-600', title: 'Nouveau Patient', desc: 'Marie Martin enregistrée', time: '15 min' },
+                            { icon: CheckCircle2, color: 'bg-amber-50 text-amber-600', title: 'Paiement reçu', desc: 'Facture #1234 - 1500 MAD', time: '30 min' },
+                        ].map((item, i) => (
+                            <motion.div 
+                                key={i}
+                                whileHover={{ x: 10 }}
+                                className="flex items-center gap-6 p-6 bg-white rounded-[24px] border border-slate-100 hover:shadow-xl hover:shadow-slate-100/50 transition-all group"
+                            >
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${item.color} shrink-0`}>
+                                    <item.icon size={24} />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-lg font-black text-slate-800">{item.title}</p>
+                                    <p className="text-slate-500 font-bold text-sm">{item.desc}</p>
+                                </div>
+                                <span className="text-xs font-black text-slate-300 uppercase tracking-widest">{item.time}</span>
+                            </motion.div>
+                        ))}
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm p-6">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Rendez-vous du Jour</h3>
-                    <div className="space-y-3">
+                {/* Agenda du jour */}
+                <div className="space-y-8">
+                    <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
+                        <CalendarCheck className="text-medical-500" />
+                        Agenda
+                    </h3>
+                    <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-xl shadow-slate-100/50">
                         {loading ? (
-                            <p className="text-slate-500">Chargement...</p>
+                            <div className="flex justify-center py-10">
+                                <div className="animate-spin rounded-full h-8 w-8 border-4 border-medical-500 border-t-transparent" />
+                            </div>
                         ) : (
-                            <>
-                                <div className="flex items-center justify-between p-3 border border-slate-100 rounded-xl">
-                                    <div className="flex items-center space-x-3">
-                                        <span className="text-sm font-medium text-slate-500 w-16">09:00</span>
-                                        <div>
-                                            <p className="font-medium text-slate-800">Jean Dupont</p>
-                                            <p className="text-sm text-slate-500">Consultation générale</p>
+                            <div className="space-y-6">
+                                {[
+                                    { time: '09:00', name: 'Jean Dupont', task: 'Consultation', status: 'Confirmé', color: 'bg-emerald-100 text-emerald-700' },
+                                    { time: '10:30', name: 'Marie Martin', task: 'Détartrage', status: 'En attente', color: 'bg-amber-100 text-amber-700' },
+                                    { time: '14:00', name: 'Pierre Bernard', task: 'Implant', status: 'Confirmé', color: 'bg-emerald-100 text-emerald-700' },
+                                ].map((rdv, i) => (
+                                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-sm font-black text-slate-400 w-12">{rdv.time}</span>
+                                            <div>
+                                                <p className="font-black text-slate-800">{rdv.name}</p>
+                                                <p className="text-xs font-bold text-slate-400">{rdv.task}</p>
+                                            </div>
                                         </div>
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${rdv.color}`}>
+                                            {rdv.status}
+                                        </span>
                                     </div>
-                                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                                        Confirmé
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between p-3 border border-slate-100 rounded-xl">
-                                    <div className="flex items-center space-x-3">
-                                        <span className="text-sm font-medium text-slate-500 w-16">10:30</span>
-                                        <div>
-                                            <p className="font-medium text-slate-800">Marie Martin</p>
-                                            <p className="text-sm text-slate-500">Détartrage</p>
-                                        </div>
-                                    </div>
-                                    <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
-                                        En attente
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between p-3 border border-slate-100 rounded-xl">
-                                    <div className="flex items-center space-x-3">
-                                        <span className="text-sm font-medium text-slate-500 w-16">14:00</span>
-                                        <div>
-                                            <p className="font-medium text-slate-800">Pierre Bernard</p>
-                                            <p className="text-sm text-slate-500">Implant</p>
-                                        </div>
-                                    </div>
-                                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                                        Confirmé
-                                    </span>
-                                </div>
-                            </>
+                                ))}
+                                <button className="w-full py-4 mt-4 border-2 border-dashed border-slate-100 rounded-2xl text-slate-400 font-black text-xs hover:border-medical-200 hover:text-medical-500 transition-all">
+                                    VOIR TOUT LE CALENDRIER
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

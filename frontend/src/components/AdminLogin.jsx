@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api.js';
+import { ArrowLeft, ShieldCheck, Mail, Lock, Loader2, ChevronRight, Smile } from 'lucide-react';
+import { motion } from 'framer-motion';
 import logo from '../img/logo-removebg-preview.png';
 
 const AdminLogin = () => {
@@ -33,9 +35,9 @@ const AdminLogin = () => {
                 // Check if user has admin role
                 const userData = response.data.user;
                 if (userData.role === 'admin' || userData.role === 'dentiste' || userData.role === 'assistant') {
-                    // Force a small delay to ensure session is written
+                    // Redirect to React admin dashboard
                     setTimeout(() => {
-                        window.location.href = '/admin/dashboard';
+                        window.location.href = '/app';
                     }, 500);
                 } else {
                     setError('Accès refusé. Vous n\'avez pas les droits administrateur.');
@@ -58,82 +60,104 @@ const AdminLogin = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center p-4">
-            <div className="max-w-md w-full">
-                {/* Back to home */}
-                <Link to="/" className="inline-flex items-center text-white hover:underline mb-6">
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                    Retour à l'accueil
-                </Link>
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 relative overflow-hidden">
+            {/* Background Decorative Elements */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 pointer-events-none">
+                <div className="absolute -top-24 -left-24 w-96 h-96 bg-medical-600 rounded-full blur-[120px]" />
+                <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-600 rounded-full blur-[120px]" />
+            </div>
 
-                <div className="bg-white rounded-3xl shadow-2xl p-8">
-                    <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-20 h-20 bg-white border border-slate-100 rounded-full mb-4 shadow-sm overflow-hidden">
-                            <img src={logo} alt="Logo" className="w-full h-full object-contain p-2" />
+            <div className="max-w-md w-full relative z-10">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-[40px] shadow-2xl p-10 border border-white/10"
+                >
+                    <div className="text-center mb-10">
+                        <div className="inline-flex items-center justify-center w-24 h-24 bg-white rounded-[24px] mb-6 shadow-xl shadow-slate-200 overflow-hidden border border-slate-50">
+                            <img src={logo} alt="SmilePro" className="w-full h-full object-contain p-2" />
                         </div>
-                        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-700 to-indigo-800 bg-clip-text text-transparent mb-2">
+                        <h1 className="text-3xl font-black text-slate-800 tracking-tight mb-2">
                             Espace Cabinet
                         </h1>
-                        <p className="text-gray-600 font-medium">
-                            Connexion réservée au personnel
+                        <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">
+                            Portail Professionnel
                         </p>
                     </div>
 
                     {error && (
-                        <div className="bg-red-50 border-2 border-red-300 text-red-700 px-4 py-3 rounded-xl mb-6 animate-pulse">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="mb-8 p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl text-xs font-bold flex items-center gap-3"
+                        >
+                            <ShieldCheck className="w-5 h-5 shrink-0" />
                             {error}
-                        </div>
+                        </motion.div>
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Email
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                                Identifiant Professionnel
                             </label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                placeholder="admin@cabinet.com"
-                            />
+                            <div className="relative group">
+                                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-100 rounded-[20px] text-slate-700 font-bold focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                                    placeholder="admin@smilepro.com"
+                                />
+                            </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                                 Mot de passe
                             </label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                placeholder="••••••••"
-                            />
+                            <div className="relative group">
+                                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-100 rounded-[20px] text-slate-700 font-bold focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+                                    placeholder="••••••••"
+                                />
+                            </div>
                         </div>
 
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-4 px-4 rounded-xl hover:from-blue-700 hover:to-indigo-800 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-lg shadow-lg hover:shadow-xl"
+                            className="w-full bg-slate-900 text-white py-5 rounded-[20px] font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3 group disabled:opacity-50"
                         >
-                            {loading ? 'Connexion en cours...' : 'SE CONNECTER'}
+                            {loading ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <>
+                                    <span>ACCÉDER AU CABINET</span>
+                                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                </>
+                            )}
                         </button>
                     </form>
 
-                    <div className="mt-8 text-center pt-6 border-t border-gray-200">
-                        <p className="text-gray-600 text-sm">
-                            Vous êtes patient ?{' '}
-                            <Link to="/login" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline">
-                                Accès patient
-                            </Link>
-                        </p>
+                    <div className="mt-10 text-center">
+                        <Link to="/" className="inline-flex items-center text-slate-400 hover:text-slate-600 font-black text-[10px] uppercase tracking-widest transition-colors">
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            Retour au portail public
+                        </Link>
                     </div>
-                </div>
+                </motion.div>
+                
+                <p className="text-center mt-8 text-slate-500 text-[10px] font-bold uppercase tracking-widest opacity-50">
+                    &copy; 2026 SMILEPRO — SYSTÈME DE GESTION CLINIQUE
+                </p>
             </div>
         </div>
     );

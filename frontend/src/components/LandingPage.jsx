@@ -13,10 +13,13 @@ import {
     Stethoscope,
     HeartPulse,
     UserCheck,
-    Calendar
+    Calendar,
+    Smile,
+    Activity
 } from 'lucide-react';
 import Navbar from './Navbar.jsx';
 import Footer from './Footer.jsx';
+import logo from '../img/logo-removebg-preview.png';
 import heroImg from '../img/Fotolia_61997183_Subscription_XXL-.jpg';
 import urgencesImg from '../img/urgences-cab-dentaire_750.jpg';
 
@@ -59,44 +62,45 @@ const LandingPage = () => {
                         variants={staggerContainer}
                         className="text-left"
                     >
-                        <motion.span 
+                        <motion.div 
                             variants={fadeInUp}
-                            className="inline-block py-1 px-4 rounded-full bg-blue-100 text-blue-700 text-sm font-bold mb-6 tracking-wide uppercase"
+                            className="inline-flex items-center gap-2 py-1 px-4 rounded-full bg-blue-100 text-blue-700 text-sm font-bold mb-6 tracking-wide uppercase"
                         >
-                            Expertise & Bienveillance
-                        </motion.span>
+                            <img src={logo} alt="Logo" className="w-6 h-6 object-contain" />
+                            SMILEPRO CLINIQUE DENTAIRE
+                        </motion.div>
                         <motion.h1 
                             variants={fadeInUp}
-                            className="text-5xl md:text-7xl font-extrabold text-slate-900 leading-tight mb-6"
+                            className="text-5xl md:text-7xl font-black text-slate-900 leading-[1.1] mb-8 tracking-tight"
                         >
                             Votre Sourire, <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Notre Chef-d'œuvre</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-medical-600 to-indigo-600">Notre Chef-d'œuvre</span>
                         </motion.h1>
                         <motion.p 
                             variants={fadeInUp}
-                            className="text-lg md:text-xl text-slate-600 mb-10 max-w-lg leading-relaxed"
+                            className="text-lg md:text-xl text-slate-500 mb-12 max-w-lg leading-relaxed font-medium"
                         >
                             Découvrez une expérience dentaire d'exception alliant technologies de pointe et confort absolu pour toute la famille.
                         </motion.p>
                         
                         <motion.div 
                             variants={fadeInUp}
-                            className="flex flex-wrap gap-4"
+                            className="flex flex-wrap gap-5"
                         >
                             <Link
                                 to="/login"
-                                className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-xl shadow-blue-200 transition-all hover:-translate-y-1 flex items-center gap-2"
+                                className="px-10 py-5 bg-medical-600 hover:bg-medical-700 text-white rounded-2xl font-black shadow-2xl shadow-medical-200 transition-all hover:-translate-y-1 flex items-center gap-3"
                             >
-                                <Calendar className="w-5 h-5" />
-                                Prendre Rendez-vous
+                                <Calendar className="w-6 h-6" />
+                                PRENDRE RENDEZ-VOUS
                             </Link>
-                            <a
-                                href="#services"
-                                className="px-8 py-4 bg-white border-2 border-slate-200 hover:border-blue-600 text-slate-700 hover:text-blue-600 rounded-2xl font-bold transition-all flex items-center gap-2"
+                            <Link
+                                to="/contact"
+                                className="px-10 py-5 bg-white border-2 border-slate-100 hover:border-medical-600 text-slate-600 hover:text-medical-600 rounded-2xl font-black transition-all flex items-center gap-3 shadow-lg shadow-slate-100/50"
                             >
-                                Nos Services
-                                <ChevronRight className="w-5 h-5" />
-                            </a>
+                                NOUS CONTACTER
+                                <ChevronRight className="w-6 h-6" />
+                            </Link>
                         </motion.div>
 
                         <motion.div 
@@ -168,17 +172,17 @@ const LandingPage = () => {
             </section>
 
             {/* Stats Bar */}
-            <section className="py-12 bg-slate-900 text-white relative z-30">
-                <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <section className="py-16 bg-slate-900 text-white relative z-30">
+                <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
                     {[
                         { label: "Années d'Expérience", value: "10+" },
                         { label: "Patients Heureux", value: "5000+" },
                         { label: "Spécialistes", value: "8" },
                         { label: "Taux de Réussite", value: "99%" },
                     ].map((stat, i) => (
-                        <div key={i}>
-                            <p className="text-4xl font-bold mb-1 text-blue-400">{stat.value}</p>
-                            <p className="text-slate-400 text-sm font-medium">{stat.label}</p>
+                        <div key={i} className="group">
+                            <p className="text-5xl font-black mb-3 text-medical-500 group-hover:scale-110 transition-transform duration-300">{stat.value}</p>
+                            <p className="text-slate-400 text-xs font-black uppercase tracking-widest">{stat.label}</p>
                         </div>
                     ))}
                 </div>
@@ -347,52 +351,90 @@ const LandingPage = () => {
             </section>
 
             {/* Contact Section */}
-            <section id="contact" className="py-24 bg-slate-900 text-white rounded-t-[100px]">
+            <section id="contact" className="py-32 bg-slate-900 text-white relative overflow-hidden">
+                {/* Decorative background */}
+                <div className="absolute top-0 right-0 w-1/3 h-full bg-medical-600/10 blur-[120px] -z-10" />
+                <div className="absolute bottom-0 left-0 w-1/3 h-full bg-indigo-600/10 blur-[120px] -z-10" />
+
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <h2 className="text-4xl font-bold mb-6">Prêt à Transformer Votre Sourire ?</h2>
-                        <p className="text-slate-400 text-lg">Nous sommes impatients de vous accueillir au sein de notre cabinet.</p>
+                    <div className="text-center max-w-3xl mx-auto mb-20">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 text-medical-400 text-[10px] font-black uppercase tracking-widest mb-6 border border-white/10"
+                        >
+                            <Phone size={12} />
+                            Contactez-nous
+                        </motion.div>
+                        <h2 className="text-4xl md:text-5xl font-black mb-6">Prêt à Transformer Votre Sourire ?</h2>
+                        <p className="text-slate-400 text-lg font-medium">Notre équipe est prête à vous accueillir pour une expérience de soin d'exception.</p>
                     </div>
                     
-                    <div className="grid md:grid-cols-3 gap-12">
-                        <div className="flex flex-col items-center text-center p-8 bg-white/5 rounded-[40px] hover:bg-white/10 transition-colors">
-                            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6">
-                                <MapPin className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-xl font-bold mb-2">Notre Adresse</h3>
-                            <p className="text-slate-400">123 Rue de la Santé, <br /> 75001 Paris, France</p>
-                        </div>
-                        
-                        <div className="flex flex-col items-center text-center p-8 bg-white/5 rounded-[40px] hover:bg-white/10 transition-colors">
-                            <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mb-6">
-                                <Phone className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-xl font-bold mb-2">Téléphone</h3>
-                            <p className="text-slate-400">Standard : 01 23 45 67 89 <br /> Urgences : 01 23 45 67 90</p>
-                        </div>
-                        
-                        <div className="flex flex-col items-center text-center p-8 bg-white/5 rounded-[40px] hover:bg-white/10 transition-colors">
-                            <div className="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center mb-6">
-                                <Mail className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-xl font-bold mb-2">Email</h3>
-                            <p className="text-slate-400">contact@cabinet.com <br /> support@cabinet.com</p>
-                        </div>
+                    <div className="grid lg:grid-cols-3 gap-12 mb-20">
+                        {[
+                            { 
+                                icon: MapPin, 
+                                title: "Notre Adresse", 
+                                val: "123 Boulevard Mohammed V", 
+                                desc: "Casablanca, Maroc",
+                                color: "bg-blue-600"
+                            },
+                            { 
+                                icon: Phone, 
+                                title: "Téléphone", 
+                                val: "+212 5 22 00 00 00", 
+                                desc: "Lun-Ven, 9h-18h",
+                                color: "bg-indigo-600"
+                            },
+                            { 
+                                icon: Mail, 
+                                title: "Email", 
+                                val: "contact@smilepro.ma", 
+                                desc: "Réponse en 24h",
+                                color: "bg-emerald-600"
+                            }
+                        ].map((item, i) => (
+                            <motion.div 
+                                key={i}
+                                whileHover={{ y: -10 }}
+                                className="flex flex-col items-center text-center p-10 bg-white/5 rounded-[40px] border border-white/5 hover:border-white/10 transition-all group"
+                            >
+                                <div className={`w-20 h-20 ${item.color} rounded-3xl flex items-center justify-center mb-8 shadow-2xl group-hover:scale-110 transition-transform`}>
+                                    <item.icon size={32} strokeWidth={2.5} />
+                                </div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">{item.title}</p>
+                                <h3 className="text-xl font-black mb-2">{item.val}</h3>
+                                <p className="text-slate-400 font-bold text-sm">{item.desc}</p>
+                            </motion.div>
+                        ))}
                     </div>
 
-                    <div className="mt-20 p-12 bg-blue-600 rounded-[50px] flex flex-col lg:flex-row items-center justify-between gap-8">
-                        <div>
-                            <h3 className="text-3xl font-bold mb-2">Inscrivez-vous dès aujourd'hui</h3>
-                            <p className="text-blue-100">Rejoignez nos patients et gérez vos rendez-vous en ligne.</p>
-                        </div>
-                        <div className="flex gap-4">
-                            <Link to="/register" className="px-8 py-4 bg-white text-blue-600 font-bold rounded-2xl hover:bg-blue-50 transition-colors">
-                                Créer un Compte
-                            </Link>
-                            <Link to="/login" className="px-8 py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-colors">
-                                Se Connecter
-                            </Link>
-                        </div>
+                    <div className="relative">
+                        <motion.div 
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="bg-gradient-to-r from-medical-600 to-indigo-600 rounded-[50px] p-12 lg:p-20 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-12 overflow-hidden"
+                        >
+                            {/* Decorative pattern */}
+                            <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none">
+                                <Smile size={400} className="absolute -top-20 -right-20 rotate-12" />
+                            </div>
+
+                            <div className="relative z-10 max-w-xl text-center lg:text-left">
+                                <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight">Inscrivez-vous dès aujourd'hui pour gérer vos soins en ligne</h3>
+                                <p className="text-white/80 text-lg font-bold">Rejoignez nos 5000+ patients satisfaits et accédez à votre dossier médical 24/7.</p>
+                            </div>
+                            <div className="relative z-10 flex flex-wrap gap-4 justify-center">
+                                <Link to="/register" className="px-10 py-5 bg-white text-medical-600 font-black rounded-2xl hover:scale-105 transition-all shadow-xl text-sm uppercase tracking-widest">
+                                    CRÉER UN COMPTE
+                                </Link>
+                                <Link to="/login" className="px-10 py-5 bg-slate-900 text-white font-black rounded-2xl hover:scale-105 transition-all shadow-xl text-sm uppercase tracking-widest">
+                                    SE CONNECTER
+                                </Link>
+                            </div>
+                        </motion.div>
                     </div>
                 </div>
             </section>

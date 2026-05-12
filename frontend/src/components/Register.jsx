@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.jsx';
 import api from '../api.js';
-import logo from '../img/logo-removebg-preview.png';
+import { ArrowLeft, User, Phone, Calendar, Mail, Lock, MapPin, IdCard, Loader2, ChevronRight, Smile } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const normalizeForEmail = (value) =>
     (value || '')
@@ -81,269 +82,179 @@ const Register = () => {
         }
     };
 
+    const inputClass = "w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-700 font-bold focus:bg-white focus:ring-4 focus:ring-medical-500/10 focus:border-medical-500 transition-all outline-none text-sm";
+    const labelClass = "text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block";
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center p-4">
-            <div className="max-w-3xl w-full">
-                {/* Back to portal */}
-                <Link to="/login" className="inline-flex items-center text-blue-900 hover:underline mb-6">
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                    Retour à l'espace patient
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 py-20">
+            <div className="max-w-4xl w-full">
+                <Link to="/login" className="inline-flex items-center text-slate-400 hover:text-medical-600 font-black text-xs uppercase tracking-widest mb-12 transition-colors group">
+                    <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+                    Retour à la connexion
                 </Link>
 
-                <div className="bg-white rounded-2xl shadow-xl p-8">
-                    <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-20 h-20 bg-white border border-slate-100 rounded-full mb-4 shadow-sm overflow-hidden">
-                            <img src={logo} alt="Logo" className="w-full h-full object-contain p-2" />
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-slate-100"
+                >
+                    <div className="bg-medical-600 p-12 text-center relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10">
+                            <Smile className="absolute -top-10 -left-10 w-64 h-64 text-white rotate-12" />
                         </div>
-                        <h1 className="text-3xl font-bold text-blue-900 mb-2">
-                            Créer un compte patient
-                        </h1>
-                        <p className="text-blue-700">
-                            Rejoignez notre cabinet pour suivre votre santé dentaire
-                        </p>
+                        <div className="relative z-10">
+                            <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-md rounded-3xl mb-6">
+                                <User className="w-10 h-10 text-white" strokeWidth={2.5} />
+                            </div>
+                            <h1 className="text-4xl font-black text-white tracking-tight mb-3">Nouveau Patient</h1>
+                            <p className="text-white/80 font-bold italic">Créez votre dossier de santé en quelques secondes.</p>
+                        </div>
                     </div>
 
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-                            {error}
-                        </div>
-                    )}
+                    <div className="p-12">
+                        {error && (
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="mb-10 p-5 bg-red-50 border border-red-100 text-red-700 rounded-2xl text-sm font-bold flex items-center gap-3"
+                            >
+                                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">!</div>
+                                {error}
+                            </motion.div>
+                        )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Informations personnelles */}
-                        <div className="bg-blue-50 p-4 rounded-lg">
-                            <h3 className="text-lg font-semibold text-blue-900 mb-4">Informations personnelles</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Prénom *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="first_name"
-                                        value={formData.first_name}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                                        placeholder="Jean"
-                                    />
+                        <form onSubmit={handleSubmit} className="space-y-12">
+                            {/* Section 1 */}
+                            <div className="space-y-8">
+                                <div className="flex items-center gap-3 pb-2 border-b border-slate-50">
+                                    <div className="w-8 h-8 rounded-lg bg-medical-50 flex items-center justify-center text-medical-600">
+                                        <Smile size={18} strokeWidth={2.5} />
+                                    </div>
+                                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Identité</h3>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Nom *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="last_name"
-                                        value={formData.last_name}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                                        placeholder="Dupont"
-                                    />
-                                </div>
-                            </div>
 
-                            <div className="mt-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Email *
-                                </label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={expectedEmail}
-                                    readOnly
-                                    required
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                                    placeholder="jean.dupont@email.com"
-                                />
-                                <p className="mt-1 text-xs text-gray-500">
-                                    Email généré automatiquement: <span className="font-medium">{expectedEmail}</span>
-                                </p>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Mot de passe *
-                                    </label>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        required
-                                        minLength="8"
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                                        placeholder="Au moins 8 caractères"
-                                    />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>Prénom</label>
+                                        <div className="relative group">
+                                            <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-medical-600" />
+                                            <input type="text" name="first_name" value={formData.first_name} onChange={handleChange} required className={inputClass} placeholder="Ex: Jean" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>Nom</label>
+                                        <div className="relative group">
+                                            <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-medical-600" />
+                                            <input type="text" name="last_name" value={formData.last_name} onChange={handleChange} required className={inputClass} placeholder="Ex: Dupont" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Confirmer le mot de passe *
-                                    </label>
-                                    <input
-                                        type="password"
-                                        name="password_confirmation"
-                                        value={formData.password_confirmation}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                                        placeholder="Confirmer"
-                                    />
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>Email (Généré)</label>
+                                        <div className="relative">
+                                            <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                                            <input type="email" value={expectedEmail} readOnly className={`${inputClass} bg-slate-100 cursor-not-allowed`} />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>Téléphone</label>
+                                        <div className="relative group">
+                                            <Phone className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-medical-600" />
+                                            <input type="tel" name="phone" value={formData.phone} onChange={handleChange} required className={inputClass} placeholder="06..." />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="mt-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Téléphone *
-                                </label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                                    placeholder="06 12 34 56 78"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Date de naissance *
-                                    </label>
-                                    <input
-                                        type="date"
-                                        name="birth_date"
-                                        value={formData.birth_date}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                                    />
+                            {/* Section 2 */}
+                            <div className="space-y-8">
+                                <div className="flex items-center gap-3 pb-2 border-b border-slate-50">
+                                    <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                        <Lock size={18} strokeWidth={2.5} />
+                                    </div>
+                                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Sécurité</h3>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Sexe *
-                                    </label>
-                                    <select
-                                        name="gender"
-                                        value={formData.gender}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                                    >
-                                        <option value="male">Homme</option>
-                                        <option value="female">Femme</option>
-                                    </select>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>Mot de passe</label>
+                                        <div className="relative group">
+                                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-medical-600" />
+                                            <input type="password" name="password" value={formData.password} onChange={handleChange} required minLength="8" className={inputClass} placeholder="••••••••" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>Confirmation</label>
+                                        <div className="relative group">
+                                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-medical-600" />
+                                            <input type="password" name="password_confirmation" value={formData.password_confirmation} onChange={handleChange} required className={inputClass} placeholder="••••••••" />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="mt-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Adresse
-                                </label>
-                                <textarea
-                                    name="address"
-                                    value={formData.address}
-                                    onChange={handleChange}
-                                    rows="2"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                                    placeholder="123 Rue de la République, 75001 Paris"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Informations médicales */}
-                        <div className="bg-blue-50 p-4 rounded-lg">
-                            <h3 className="text-lg font-semibold text-blue-900 mb-4">Informations médicales</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        CIN
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="cin"
-                                        value={formData.cin}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                                        placeholder="AB123456"
-                                    />
+                            {/* Section 3 */}
+                            <div className="space-y-8">
+                                <div className="flex items-center gap-3 pb-2 border-b border-slate-50">
+                                    <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                                        <Calendar size={18} strokeWidth={2.5} />
+                                    </div>
+                                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Informations Complémentaires</h3>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Groupe sanguin
-                                    </label>
-                                    <select
-                                        name="blood_group"
-                                        value={formData.blood_group}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                                    >
-                                        <option value="">Non spécifié</option>
-                                        <option value="A+">A+</option>
-                                        <option value="A-">A-</option>
-                                        <option value="B+">B+</option>
-                                        <option value="B-">B-</option>
-                                        <option value="AB+">AB+</option>
-                                        <option value="AB-">AB-</option>
-                                        <option value="O+">O+</option>
-                                        <option value="O-">O-</option>
-                                    </select>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>Naissance</label>
+                                        <input type="date" name="birth_date" value={formData.birth_date} onChange={handleChange} required className={inputClass} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>Sexe</label>
+                                        <select name="gender" value={formData.gender} onChange={handleChange} required className={inputClass}>
+                                            <option value="male">Homme</option>
+                                            <option value="female">Femme</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>CIN</label>
+                                        <div className="relative group">
+                                            <IdCard className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-medical-600" />
+                                            <input type="text" name="cin" value={formData.cin} onChange={handleChange} required className={inputClass} placeholder="N° Carte" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className={labelClass}>Adresse de résidence</label>
+                                    <div className="relative group">
+                                        <MapPin className="absolute left-5 top-5 w-4 h-4 text-slate-300 group-focus-within:text-medical-600" />
+                                        <textarea name="address" value={formData.address} onChange={handleChange} rows={3} className={`${inputClass} pl-14 pt-4`} placeholder="Votre adresse complète..."></textarea>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="mt-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Allergies
-                                </label>
-                                <textarea
-                                    name="allergies"
-                                    value={formData.allergies}
-                                    onChange={handleChange}
-                                    rows="2"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                                    placeholder="Pénicilline, latex, etc."
-                                />
-                            </div>
-
-                            <div className="mt-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Antécédents médicaux
-                                </label>
-                                <textarea
-                                    name="medical_history"
-                                    value={formData.medical_history}
-                                    onChange={handleChange}
-                                    rows="3"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                                    placeholder="Diabète, hypertension, chirurgies antérieures, etc."
-                                />
-                            </div>
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-blue-900 text-white py-3 px-4 rounded-lg hover:bg-blue-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {loading ? 'Création en cours...' : 'CRÉER MON COMPTE'}
-                        </button>
-                    </form>
-
-                    <div className="mt-6 text-center">
-                        <p className="text-gray-600">
-                            Vous avez déjà un compte ?{' '}
-                            <Link to="/login" className="text-blue-900 hover:underline font-medium">
-                                Se connecter
-                            </Link>
-                        </p>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full bg-slate-900 text-white py-6 rounded-[24px] font-black text-sm uppercase tracking-widest hover:bg-medical-600 transition-all shadow-2xl shadow-slate-200 flex items-center justify-center gap-3 group disabled:opacity-50"
+                            >
+                                {loading ? (
+                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                ) : (
+                                    <>
+                                        <span>CRÉER MON COMPTE SANTÉ</span>
+                                        <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                                    </>
+                                )}
+                            </button>
+                        </form>
                     </div>
-                </div>
+                </motion.div>
+                
+                <p className="text-center mt-12 text-slate-400 text-sm font-bold">
+                    Déjà inscrit ? <Link to="/login" className="text-medical-600 hover:underline">Connectez-vous ici</Link>
+                </p>
             </div>
         </div>
     );

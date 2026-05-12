@@ -61,6 +61,7 @@ Route::middleware(['auth:sanctum', 'web', 'force.json'])->group(function () {
         Route::delete('/patients/{patient}', [PatientApiController::class, 'destroy']);
 
         // Appointments API
+        Route::get('/check-availability', [AppointmentApiController::class, 'checkAvailability']);
         Route::get('/appointments', [AppointmentApiController::class, 'index']);
         Route::get('/appointments/{appointment}', [AppointmentApiController::class, 'show']);
         Route::post('/appointments', [AppointmentApiController::class, 'store']);

@@ -20,11 +20,6 @@ const ProtectedRoute = () => {
         return <Navigate to="/login" replace />;
     }
 
-    if (user.role && user.role !== 'patient') {
-        window.location.href = '/admin/dashboard';
-        return null;
-    }
-
     return <Outlet />;
 };
 
