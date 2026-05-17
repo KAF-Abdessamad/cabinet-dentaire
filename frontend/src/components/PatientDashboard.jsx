@@ -12,6 +12,7 @@ import {
     Loader2,
     Bell,
     X,
+    ChevronRight,
 } from 'lucide-react';
 import debounce from 'lodash.debounce';
 import api from '../api.js';
@@ -118,6 +119,13 @@ const PatientDashboard = () => {
 
     useEffect(() => {
         fetchPatientData();
+        
+        // Polling pour mises à jour en temps réel (toutes les 30 secondes)
+        const interval = setInterval(() => {
+            fetchPatientData();
+        }, 30000);
+        
+        return () => clearInterval(interval);
     }, [fetchPatientData]);
 
     const patient = patientBundle?.patient;

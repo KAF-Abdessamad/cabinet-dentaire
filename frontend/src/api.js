@@ -12,4 +12,22 @@ const api = axios.create({
     xsrfHeaderName: 'X-XSRF-TOKEN',
 });
 
+// Intercepteur pour gérer les erreurs 401
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Ne pas rediriger si c'est la route /api/user (vérification d'auth)
+            if (error.config?.url === '/api/user') {
+                return Promise.reject(error);
+            }
+            // Rediriger vers login si non authentifié
+            if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;

@@ -42,7 +42,8 @@ class AppointmentService
         $currentStatus = $appointment->status;
         
         $allowedTransitions = [
-            'requested' => ['proposed', 'cancelled'],
+            // Le cabinet peut proposer un créneau ou confirmer directement une demande en ligne.
+            'requested' => ['proposed', 'confirmed', 'cancelled'],
             'proposed' => ['confirmed', 'cancelled', 'requested'],
             'pending' => ['confirmed', 'cancelled'], // Support pending if used
             'confirmed' => ['completed', 'cancelled'],

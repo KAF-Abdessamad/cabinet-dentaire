@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\PatientDashboardController;
 use App\Http\Controllers\Api\PatientApiController;
 use App\Http\Controllers\Api\AppointmentApiController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ContactController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', [AuthController::class, 'store'])->middleware(['web', 'force.json']);
 Route::post('/admin/login', [AuthController::class, 'storeAdmin'])->middleware(['web', 'force.json']);
 Route::post('/register', [PatientRegistrationController::class, 'store'])->middleware(['web', 'force.json']);
+Route::post('/contact', [ContactController::class, 'store'])->middleware(['web', 'force.json']);
 
 Route::middleware(['auth:sanctum', 'web', 'force.json'])->group(function () {
     Route::post('/logout', [AuthController::class, 'destroy']);
@@ -59,6 +61,10 @@ Route::middleware(['auth:sanctum', 'web', 'force.json'])->group(function () {
         Route::post('/patients', [PatientApiController::class, 'store']);
         Route::put('/patients/{patient}', [PatientApiController::class, 'update']);
         Route::delete('/patients/{patient}', [PatientApiController::class, 'destroy']);
+
+        // Référentiels RDV (même logique que l’espace patient, autorisé pour le cabinet)
+        Route::get('/cabinet/dentists', [PatientDashboardController::class, 'dentists']);
+        Route::get('/cabinet/treatments', [PatientDashboardController::class, 'treatments']);
 
         // Appointments API
         Route::get('/check-availability', [AppointmentApiController::class, 'checkAvailability']);

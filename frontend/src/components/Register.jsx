@@ -4,6 +4,8 @@ import { useAuth } from '../hooks/useAuth.jsx';
 import api from '../api.js';
 import { ArrowLeft, User, Phone, Calendar, Mail, Lock, MapPin, IdCard, Loader2, ChevronRight, Smile } from 'lucide-react';
 import { motion } from 'framer-motion';
+import patientImg from '../img/patient.jpg';
+import logo from '../img/logo-removebg-preview.png';
 
 const normalizeForEmail = (value) =>
     (value || '')
@@ -99,12 +101,11 @@ const Register = () => {
                     className="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-slate-100"
                 >
                     <div className="bg-medical-600 p-12 text-center relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10">
-                            <Smile className="absolute -top-10 -left-10 w-64 h-64 text-white rotate-12" />
-                        </div>
+                        <img src={patientImg} alt="Patient" className="absolute inset-0 h-full w-full object-cover opacity-20" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-medical-700/85 to-indigo-700/75" />
                         <div className="relative z-10">
-                            <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-md rounded-3xl mb-6">
-                                <User className="w-10 h-10 text-white" strokeWidth={2.5} />
+                            <div className="inline-flex items-center justify-center w-24 h-24 bg-white/80 rounded-3xl mb-6">
+                                <img src={logo} alt="Cabinet Dentaire" className="w-20 h-20 object-contain" />
                             </div>
                             <h1 className="text-4xl font-black text-white tracking-tight mb-3">Nouveau Patient</h1>
                             <p className="text-white/80 font-bold italic">Créez votre dossier de santé en quelques secondes.</p>

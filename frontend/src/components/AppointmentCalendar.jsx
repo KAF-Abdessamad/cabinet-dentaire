@@ -19,6 +19,7 @@ const statusColors = {
 
 const AppointmentCalendar = () => {
     const [events, setEvents] = useState([]);
+    const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -26,8 +27,11 @@ const AppointmentCalendar = () => {
     const fetchAppointments = async () => {
         setLoading(true);
         try {
-            const response = await api.get('/api/appointments');
-            const formattedEvents = response.data.map(appt => ({
+            const response = await api.get('/api/appointments', { params: { scope: 'all' } });
+            const allAppointments = response.data || [];
+            const formattedEvents = allAppointments
+                .filter((appt) => appt.starts_at && appt.ends_at)
+                .map(appt => ({
                 id: appt.id,
                 title: `${appt.patient?.first_name} ${appt.patient?.last_name} - ${appt.treatment?.name || 'Soin'}`,
                 start: new Date(appt.starts_at),
@@ -36,6 +40,11 @@ const AppointmentCalendar = () => {
                 resource: appt
             }));
             setEvents(formattedEvents);
+            setRequests(
+                allAppointments
+                    .filter((appt) => appt.status === 'requested')
+                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            );
         } catch (error) {
             console.error('Error fetching appointments for calendar:', error);
         } finally {
@@ -96,10 +105,11 @@ const AppointmentCalendar = () => {
                     </button>
                     <button 
                         onClick={handleAddNew}
+                        title="Créneau pour un patient qui n'a pas demandé de RDV en ligne"
                         className="flex items-center gap-3 px-8 py-4 bg-medical-600 text-white rounded-2xl hover:bg-medical-700 transition-all shadow-xl shadow-medical-200 font-black group"
                     >
                         <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform" />
-                        NOUVEAU RENDEZ-VOUS
+                        NOUVEAU RDV (CABINET)
                     </button>
                 </div>
             </div>
@@ -130,6 +140,35 @@ const AppointmentCalendar = () => {
                             agenda: "Agenda"
                         }}
                     />
+                )}
+            </div>
+
+            <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-xl shadow-slate-100/50">
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-black text-slate-800">Demandes patient à traiter</h2>
+                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{requests.length} en attente</span>
+                </div>
+                {requests.length === 0 ? (
+                    <p className="text-slate-500 font-bold">Aucune demande en attente.</p>
+                ) : (
+                    <div className="space-y-4">
+                        {requests.map((rdv) => (
+                            <div key={rdv.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/60">
+                                <div>
+                                    <p className="font-black text-slate-800">{rdv.patient?.first_name} {rdv.patient?.last_name}</p>
+                                    <p className="text-xs font-bold text-slate-500 mt-1">
+                                        {rdv.treatment?.name || rdv.reason || 'Soin non precise'} • {rdv.dentist?.name ? `Dr. ${rdv.dentist.name}` : 'Dentiste non assigne'}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => handleSelectEvent(rdv)}
+                                    className="px-5 py-2 rounded-xl bg-medical-600 text-white text-xs font-black uppercase tracking-widest hover:bg-medical-700 transition"
+                                >
+                                    Planifier
+                                </button>
+                            </div>
+                        ))}
+                    </div>
                 )}
             </div>
 

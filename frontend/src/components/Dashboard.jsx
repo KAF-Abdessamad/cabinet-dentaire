@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
     Users, 
@@ -11,7 +11,8 @@ import {
     UserPlus,
     CheckCircle2,
     CalendarCheck,
-    CalendarPlus
+    CalendarPlus,
+    Bell
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../api.js';
@@ -23,22 +24,42 @@ const Dashboard = () => {
         pendingAppointments: 0,
         monthlyRevenue: 0
     });
+    const [todayAppointments, setTodayAppointments] = useState([]);
+    const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchDashboardData();
+        const interval = setInterval(fetchDashboardData, 10000);
+        return () => clearInterval(interval);
     }, []);
 
     const fetchDashboardData = async () => {
         try {
-            const response = await api.get('/api/dashboard/stats');
-            setStats(response.data);
+            const [statsRes, todayRes, notifRes] = await Promise.all([
+                api.get('/api/dashboard/stats'),
+                api.get('/api/appointments', { params: { date: new Date().toISOString().slice(0, 10) } }),
+                api.get('/api/notifications'),
+            ]);
+            setStats(statsRes.data);
+            setTodayAppointments(todayRes.data || []);
+            setNotifications(notifRes.data?.notifications || []);
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
         } finally {
             setLoading(false);
         }
     };
+
+    const recentActivity = useMemo(() => {
+        return notifications.slice(0, 5).map((n) => ({
+            id: n.id,
+            title: n.title || 'Notification',
+            desc: n.message,
+            time: new Date(n.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+            unread: !n.read_at,
+        }));
+    }, [notifications]);
 
     const StatCard = ({ title, value, icon: Icon, color, trend }) => (
         <motion.div 
@@ -134,18 +155,19 @@ const Dashboard = () => {
                     </div>
                     
                     <div className="grid grid-cols-1 gap-4">
-                        {[
-                            { icon: CalendarPlus, color: 'bg-emerald-50 text-emerald-600', title: 'Nouveau RDV', desc: 'Jean Dupont - 14:30', time: '5 min' },
-                            { icon: UserPlus, color: 'bg-blue-50 text-blue-600', title: 'Nouveau Patient', desc: 'Marie Martin enregistrée', time: '15 min' },
-                            { icon: CheckCircle2, color: 'bg-amber-50 text-amber-600', title: 'Paiement reçu', desc: 'Facture #1234 - 1500 MAD', time: '30 min' },
-                        ].map((item, i) => (
+                        {recentActivity.length === 0 && !loading && (
+                            <div className="p-6 rounded-[24px] bg-white border border-slate-100 text-slate-500 font-bold">
+                                Aucune activité récente.
+                            </div>
+                        )}
+                        {recentActivity.map((item) => (
                             <motion.div 
-                                key={i}
+                                key={item.id}
                                 whileHover={{ x: 10 }}
                                 className="flex items-center gap-6 p-6 bg-white rounded-[24px] border border-slate-100 hover:shadow-xl hover:shadow-slate-100/50 transition-all group"
                             >
-                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${item.color} shrink-0`}>
-                                    <item.icon size={24} />
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${item.unread ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-500'} shrink-0`}>
+                                    <Bell size={24} />
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-lg font-black text-slate-800">{item.title}</p>
@@ -170,20 +192,24 @@ const Dashboard = () => {
                             </div>
                         ) : (
                             <div className="space-y-6">
-                                {[
-                                    { time: '09:00', name: 'Jean Dupont', task: 'Consultation', status: 'Confirmé', color: 'bg-emerald-100 text-emerald-700' },
-                                    { time: '10:30', name: 'Marie Martin', task: 'Détartrage', status: 'En attente', color: 'bg-amber-100 text-amber-700' },
-                                    { time: '14:00', name: 'Pierre Bernard', task: 'Implant', status: 'Confirmé', color: 'bg-emerald-100 text-emerald-700' },
-                                ].map((rdv, i) => (
-                                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                                {todayAppointments.length === 0 && (
+                                    <div className="text-center text-slate-500 font-bold py-8">Aucun rendez-vous aujourd'hui.</div>
+                                )}
+                                {todayAppointments.slice(0, 6).map((rdv) => (
+                                    <div key={rdv.id} className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
                                         <div className="flex items-center gap-4">
-                                            <span className="text-sm font-black text-slate-400 w-12">{rdv.time}</span>
+                                            <span className="text-sm font-black text-slate-400 w-12">{(rdv.start_time || '').slice(0, 5)}</span>
                                             <div>
-                                                <p className="font-black text-slate-800">{rdv.name}</p>
-                                                <p className="text-xs font-bold text-slate-400">{rdv.task}</p>
+                                                <p className="font-black text-slate-800">{rdv.patient?.first_name} {rdv.patient?.last_name}</p>
+                                                <p className="text-xs font-bold text-slate-400">{rdv.treatment?.name || rdv.reason || 'Consultation'}</p>
                                             </div>
                                         </div>
-                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${rdv.color}`}>
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
+                                            rdv.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' :
+                                            rdv.status === 'proposed' ? 'bg-amber-100 text-amber-700' :
+                                            rdv.status === 'requested' ? 'bg-blue-100 text-blue-700' :
+                                            'bg-slate-100 text-slate-700'
+                                        }`}>
                                             {rdv.status}
                                         </span>
                                     </div>

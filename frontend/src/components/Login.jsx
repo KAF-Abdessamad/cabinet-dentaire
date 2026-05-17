@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.jsx';
 import { ArrowLeft, Smile, Mail, Lock, Loader2, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import patientImg from '../img/patient.jpg';
+import logo from '../img/logo-removebg-preview.png';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -37,16 +39,15 @@ const Login = () => {
         <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
             {/* Left Side - Visual */}
             <div className="hidden lg:flex lg:w-1/2 bg-medical-600 relative overflow-hidden items-center justify-center p-12">
-                <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10">
-                    <Smile className="absolute -top-20 -left-20 w-[600px] h-[600px] text-white rotate-12" />
-                </div>
+                <img src={patientImg} alt="Patient" className="absolute inset-0 h-full w-full object-cover opacity-25" />
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/40 to-medical-700/60" />
                 <div className="relative z-10 max-w-lg text-center">
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="bg-white/10 backdrop-blur-lg border border-white/20 p-12 rounded-[40px] shadow-2xl"
                     >
-                        <Smile className="w-20 h-20 text-white mx-auto mb-8" strokeWidth={2.5} />
+                        <img src={logo} alt="Cabinet Dentaire" className="w-24 h-24 object-contain mx-auto mb-8 rounded-2xl bg-white/80 p-2" />
                         <h2 className="text-4xl font-black text-white mb-6 leading-tight">Bienvenue dans votre Espace Santé</h2>
                         <p className="text-white/80 font-bold leading-relaxed">
                             Gérez vos rendez-vous, consultez votre historique et communiquez avec votre cabinet en toute simplicité.

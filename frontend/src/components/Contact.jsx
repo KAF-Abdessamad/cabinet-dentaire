@@ -3,19 +3,41 @@ import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2, MessageSquare } from 
 import { motion } from 'framer-motion';
 import Navbar from './Navbar.jsx';
 import Footer from './Footer.jsx';
+import api from '../api.js';
 
 const Contact = () => {
     const [sending, setSending] = useState(false);
     const [sent, setSent] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setSending(true);
-        // Simulate API call
-        setTimeout(() => {
+        setError('');
+
+        const formData = new FormData(e.target);
+        const data = {
+            name: formData.get('name'),
+            email: formData.get('email'),
+            subject: formData.get('subject'),
+            message: formData.get('message'),
+        };
+
+        try {
+            await api.get('/sanctum/csrf-cookie');
+            await api.post('/api/contact', data);
             setSending(false);
             setSent(true);
-        }, 1500);
+            e.target.reset();
+        } catch (err) {
+            setSending(false);
+            const msg =
+                err.response?.data?.message ||
+                (err.response?.data?.errors && Object.values(err.response.data.errors).flat().join(' ')) ||
+                'Une erreur est survenue. Veuillez réessayer.';
+            setError(msg);
+            console.error('Contact form error:', err);
+        }
     };
 
     return (
@@ -110,28 +132,33 @@ const Contact = () => {
                                     </div>
                                 ) : (
                                     <form onSubmit={handleSubmit} className="space-y-8">
+                                        {error && (
+                                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+                                                {error}
+                                            </div>
+                                        )}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nom complet</label>
-                                                <input required type="text" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-700 font-bold focus:bg-white focus:ring-4 focus:ring-medical-500/10 focus:border-medical-500 transition-all outline-none" placeholder="Jean Dupont" />
+                                                <input required name="name" type="text" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-700 font-bold focus:bg-white focus:ring-4 focus:ring-medical-500/10 focus:border-medical-500 transition-all outline-none" placeholder="Jean Dupont" />
                                             </div>
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</label>
-                                                <input required type="email" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-700 font-bold focus:bg-white focus:ring-4 focus:ring-medical-500/10 focus:border-medical-500 transition-all outline-none" placeholder="jean@exemple.com" />
+                                                <input required name="email" type="email" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-700 font-bold focus:bg-white focus:ring-4 focus:ring-medical-500/10 focus:border-medical-500 transition-all outline-none" placeholder="jean@exemple.com" />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sujet</label>
-                                            <select className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-700 font-bold focus:bg-white focus:ring-4 focus:ring-medical-500/10 focus:border-medical-500 transition-all outline-none">
-                                                <option>Demande d'information</option>
-                                                <option>Urgence dentaire</option>
-                                                <option>Question sur un rendez-vous</option>
-                                                <option>Autre</option>
+                                            <select name="subject" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-700 font-bold focus:bg-white focus:ring-4 focus:ring-medical-500/10 focus:border-medical-500 transition-all outline-none">
+                                                <option value="Demande d'information">Demande d'information</option>
+                                                <option value="Urgence dentaire">Urgence dentaire</option>
+                                                <option value="Question sur un rendez-vous">Question sur un rendez-vous</option>
+                                                <option value="Autre">Autre</option>
                                             </select>
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Message</label>
-                                            <textarea required rows={6} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-700 font-bold focus:bg-white focus:ring-4 focus:ring-medical-500/10 focus:border-medical-500 transition-all outline-none" placeholder="Comment pouvons-nous vous aider ?"></textarea>
+                                            <textarea required name="message" rows={6} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-700 font-bold focus:bg-white focus:ring-4 focus:ring-medical-500/10 focus:border-medical-500 transition-all outline-none" placeholder="Comment pouvons-nous vous aider ?"></textarea>
                                         </div>
                                         <button 
                                             type="submit"

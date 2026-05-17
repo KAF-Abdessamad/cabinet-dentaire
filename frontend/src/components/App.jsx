@@ -11,6 +11,7 @@ import AdminLogin from './AdminLogin.jsx';
 import LandingPage from './LandingPage.jsx';
 import Contact from './Contact.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
+import NotificationSystem from './NotificationSystem.jsx';
 import { useAuth } from '../hooks/useAuth.jsx';
 import api from '../api.js';
 
@@ -24,6 +25,9 @@ const AppLayout = () => {
         <div className="min-h-screen bg-slate-50 flex">
             <Sidebar user={user} />
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                <div className="px-12 pt-6 flex justify-end">
+                    <NotificationSystem />
+                </div>
                 <main className="flex-1 overflow-y-auto p-12">
                     <Outlet />
                 </main>
@@ -43,6 +47,7 @@ const App = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/contact" element={<Contact />} />
                 
                 {/* Patient routes */}
                 <Route element={<ProtectedRoute />}>
