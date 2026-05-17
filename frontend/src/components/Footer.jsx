@@ -1,98 +1,130 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Smile, Mail, Phone, MapPin, ShieldCheck, Globe, MessageCircle, ExternalLink } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, ShieldCheck } from 'lucide-react';
 import logo from '../img/logo-removebg-preview.png';
 
 const Footer = () => {
+    const scrollTo = (id) => (e) => {
+        e.preventDefault();
+        if (window.location.pathname === '/') {
+            document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
     return (
-        <footer className="bg-slate-900 text-white pt-24 pb-12 overflow-hidden relative">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-medical-500 to-indigo-600" />
-            
+        <footer id="contact" className="relative bg-[#0F2347] text-white pt-20 pb-10 scroll-mt-28">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-dp-secondary to-[#2E8B8B]" />
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-16 mb-20">
-                    {/* Brand */}
-                    <div className="lg:col-span-1 space-y-8">
-                        <Link to="/" className="flex items-center gap-4 group">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-white shadow-lg overflow-hidden border border-white/10 transition-transform duration-300 group-hover:scale-105">
-                                <img src={logo} alt="SmilePro Logo" className="h-full w-full object-contain p-2" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+                    {/* Marque */}
+                    <div className="space-y-6">
+                        <Link to="/" className="flex items-center gap-3 group">
+                            <div className="h-14 w-14 rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-lg group-hover:scale-105 transition-transform">
+                                <img src={logo} alt="DentistPro" className="h-full w-full object-contain p-2" />
                             </div>
                             <div>
-                                <span className="block text-2xl font-black tracking-tight leading-none">SmilePro</span>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Clinique Dentaire</span>
+                                <span className="block font-display text-xl text-white">DentistPro</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#7ec8c8]">
+                                    Cabinet Dentaire
+                                </span>
                             </div>
                         </Link>
-                        <p className="text-slate-400 font-medium leading-relaxed">
-                            Offrir des soins dentaires d'exception avec une approche personnalisée et technologique. Votre sourire est notre engagement quotidien.
+                        <p className="text-white/65 text-sm leading-relaxed">
+                            Cabinet dentaire multidisciplinaire à Casablanca. Soins de qualité, parcours patient
+                            numérique et accompagnement personnalisé.
                         </p>
-                        <div className="flex gap-4">
-                            {[Globe, MessageCircle, ExternalLink].map((Icon, i) => (
-                                <a key={i} href="#" className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:bg-medical-600 hover:text-white transition-all">
-                                    <Icon size={18} />
+                    </div>
+
+                    {/* Liens utiles */}
+                    <div>
+                        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#7ec8c8] mb-6">Liens utiles</h3>
+                        <ul className="space-y-3 text-sm">
+                            <li>
+                                <Link to="/login" className="text-white/70 hover:text-white font-medium transition">
+                                    Espace Patient
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/register" className="text-white/70 hover:text-white font-medium transition">
+                                    Créer un compte
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/admin/login" className="text-white/70 hover:text-white font-medium transition">
+                                    Connexion Staff
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/contact" className="text-white/70 hover:text-white font-medium transition">
+                                    Formulaire de contact
+                                </Link>
+                            </li>
+                            <li>
+                                <a href="#services" onClick={scrollTo('services')} className="text-white/70 hover:text-white font-medium transition">
+                                    Nos services
                                 </a>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Quick Links */}
-                    <div>
-                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-medical-500 mb-8">Navigation</h3>
-                        <ul className="space-y-4">
-                            {['Accueil', 'Nos Services', 'L\'Équipe', 'Contact'].map((item) => (
-                                <li key={item}>
-                                    <a href="#" className="text-slate-400 hover:text-white font-bold transition-colors">{item}</a>
-                                </li>
-                            ))}
+                            </li>
                         </ul>
                     </div>
 
-                    {/* Services */}
+                    {/* Horaires */}
                     <div>
-                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-medical-500 mb-8">Spécialités</h3>
-                        <ul className="space-y-4">
-                            {['Implantologie', 'Esthétique', 'Orthodontie', 'Parodontie'].map((item) => (
-                                <li key={item}>
-                                    <a href="#" className="text-slate-400 hover:text-white font-bold transition-colors">{item}</a>
-                                </li>
-                            ))}
+                        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#7ec8c8] mb-6 flex items-center gap-2">
+                            <Clock className="h-4 w-4" aria-hidden />
+                            Horaires d&apos;ouverture
+                        </h3>
+                        <ul className="space-y-3 text-sm text-white/75">
+                            <li className="flex justify-between gap-4">
+                                <span>Lundi – Vendredi</span>
+                                <span className="font-semibold text-white">9h00 – 18h00</span>
+                            </li>
+                            <li className="flex justify-between gap-4">
+                                <span>Samedi</span>
+                                <span className="font-semibold text-white">9h00 – 13h00</span>
+                            </li>
+                            <li className="flex justify-between gap-4">
+                                <span>Dimanche</span>
+                                <span className="font-semibold text-dp-danger/90">Fermé</span>
+                            </li>
                         </ul>
                     </div>
 
-                    {/* Contact Info */}
-                    <div className="space-y-8">
-                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-medical-500 mb-8">Nous Trouver</h3>
-                        <div className="space-y-6">
-                            <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-medical-500 shrink-0">
-                                    <MapPin size={18} />
-                                </div>
-                                <p className="text-slate-400 font-bold text-sm">123 Boulevard Mohammed V, Casablanca, Maroc</p>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-medical-500 shrink-0">
-                                    <Phone size={18} />
-                                </div>
-                                <p className="text-slate-400 font-bold text-sm">+212 5 22 00 00 00</p>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-medical-500 shrink-0">
-                                    <Mail size={18} />
-                                </div>
-                                <p className="text-slate-400 font-bold text-sm">contact@smilepro.ma</p>
-                            </div>
-                        </div>
+                    {/* Contact */}
+                    <div>
+                        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#7ec8c8] mb-6">Nous contacter</h3>
+                        <ul className="space-y-4 text-sm">
+                            <li className="flex items-start gap-3 text-white/75">
+                                <MapPin className="h-5 w-5 text-dp-secondary shrink-0 mt-0.5" aria-hidden />
+                                <span>
+                                    123 Boulevard Mohammed V
+                                    <br />
+                                    Casablanca, Maroc
+                                </span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <Phone className="h-5 w-5 text-dp-secondary shrink-0" aria-hidden />
+                                <a href="tel:+212522000000" className="text-white/75 hover:text-white font-medium">
+                                    +212 5 22 00 00 00
+                                </a>
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <Mail className="h-5 w-5 text-dp-secondary shrink-0" aria-hidden />
+                                <a href="mailto:contact@dentistpro.ma" className="text-white/75 hover:text-white font-medium">
+                                    contact@dentistpro.ma
+                                </a>
+                            </li>
+                        </ul>
                     </div>
                 </div>
 
-                {/* Bottom Bar */}
-                <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
-                    <div className="flex items-center gap-3">
-                        <ShieldCheck className="text-medical-500" size={20} />
-                        <p className="text-xs font-black text-slate-500 uppercase tracking-widest">
-                            SmilePro — Établissement de Santé Agréé
-                        </p>
+                <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div className="flex items-center gap-2 text-white/50 text-xs">
+                        <ShieldCheck className="h-4 w-4 text-dp-secondary" aria-hidden />
+                        <span>Établissement de santé agréé — données patients protégées</span>
                     </div>
-                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">
-                        © 2026 SMILEPRO CLINIC. TOUS DROITS RÉSERVÉS.
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">
+                        © {new Date().getFullYear()} DentistPro. Tous droits réservés.
                     </p>
                 </div>
             </div>

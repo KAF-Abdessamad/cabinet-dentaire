@@ -2,6 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --dp-primary: #1B3A6B;
+  --dp-primary-hover: #152E56;
+  --dp-secondary: #2E8B8B;
+  --dp-accent: #E8F4F8;
+  --dp-success: #22C55E;
+  --dp-danger: #EF4444;
+  --dp-warning: #F59E0B;
+  --dp-info: #3B82F6;
+  --dp-bg: #F0F4F8;
+  --dp-white: #FFFFFF;
+  --dp-font-display: "DM Serif Display", "Playfair Display", Georgia, serif;
+  --dp-font-sans: "DM Sans", system-ui, sans-serif;
+  --dp-font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-dp-bg text-dp-neutral-800 antialiased;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display text-dp-primary;
+  }
+}
+
+/* Ripple effect (boutons design system) */
+.dp-ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: dp-ripple 600ms ease-out;
+  background-color: rgb(255 255 255 / 0.35);
+  pointer-events: none;
+}
+
+@keyframes dp-ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes dp-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 @layer utilities {
     .animate-fade-in {
         animation: fade-in 0.45s ease-out both;

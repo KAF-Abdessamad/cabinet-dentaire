@@ -4,7 +4,12 @@ import Header from './Header.jsx';
 import Dashboard from './Dashboard.jsx';
 import PatientList from './PatientList.jsx';
 import AppointmentCalendar from './AppointmentCalendar.jsx';
-import PatientDashboard from './PatientDashboard.jsx';
+import PatientShell from './PatientShell.jsx';
+import PatientHome from './patient/PatientHome.jsx';
+import PatientAppointmentsPage from './patient/PatientAppointmentsPage.jsx';
+import PatientCarePage from './patient/PatientCarePage.jsx';
+import PatientInvoicesPage from './patient/PatientInvoicesPage.jsx';
+import PatientProfilePage from './patient/PatientProfilePage.jsx';
 import Login from './Login.jsx';
 import Register from './Register.jsx';
 import AdminLogin from './AdminLogin.jsx';
@@ -15,7 +20,6 @@ import NotificationSystem from './NotificationSystem.jsx';
 import { useAuth } from '../hooks/useAuth.jsx';
 import api from '../api.js';
 
-import PatientShell from './PatientShell.jsx';
 import Sidebar from './Sidebar.jsx';
 
 // Layout component that wraps all protected routes
@@ -51,8 +55,12 @@ const App = () => {
                 
                 {/* Patient routes */}
                 <Route element={<ProtectedRoute />}>
-                    <Route element={<PatientShell><Outlet /></PatientShell>}>
-                        <Route path="/patient/dashboard" element={<PatientDashboard />} />
+                    <Route element={<PatientShell />}>
+                        <Route path="/patient/dashboard" element={<PatientHome />} />
+                        <Route path="/patient/appointments" element={<PatientAppointmentsPage />} />
+                        <Route path="/patient/care" element={<PatientCarePage />} />
+                        <Route path="/patient/invoices" element={<PatientInvoicesPage />} />
+                        <Route path="/patient/profile" element={<PatientProfilePage />} />
                     </Route>
                 </Route>
                 

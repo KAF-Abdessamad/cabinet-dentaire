@@ -48,6 +48,7 @@ Route::middleware(['auth:sanctum', 'web', 'force.json'])->group(function () {
         Route::post('/patient/appointments', [PatientDashboardController::class, 'storeAppointment']);
         Route::post('/patient/appointments/{appointment}/confirm', [PatientDashboardController::class, 'confirmAppointment']);
         Route::post('/patient/appointments/{appointment}/reject', [PatientDashboardController::class, 'rejectAppointment']);
+        Route::post('/patient/appointments/{appointment}/cancel', [PatientDashboardController::class, 'cancelAppointment']);
     });
 
     // Admin/Dentist routes

@@ -63,7 +63,7 @@ class PatientDashboardController extends Controller
         $appointments = Appointment::where('patient_id', $patient->id)
             ->where('appointment_date', '>=', now())
             ->where('status', '!=', 'cancelled')
-            ->with(['dentist', 'treatments'])
+            ->with(['dentist', 'treatment'])
             ->orderBy('appointment_date')
             ->orderBy('start_time')
             ->limit(5)
@@ -87,7 +87,7 @@ class PatientDashboardController extends Controller
         return response()->json([
             'patient' => $patient,
             'appointments' => $patient->appointments()
-                ->with(['dentist', 'treatments'])
+                ->with(['dentist', 'treatment'])
                 ->orderBy('appointment_date', 'desc')
                 ->get(),
             'medical_records' => $patient->medicalRecords()
@@ -267,5 +267,29 @@ class PatientDashboardController extends Controller
         }
 
         return response()->json(['message' => 'Proposition refusée. Votre demande repasse en attente.', 'appointment' => $appointment->load('treatment')]);
+    }
+
+    /**
+     * Annule un rendez-vous (patient).
+     */
+    public function cancelAppointment(Appointment $appointment): JsonResponse
+    {
+        $user = Auth::user();
+        $patient = $user->patient;
+
+        if (!$patient || $appointment->patient_id !== $patient->id) {
+            return response()->json(['message' => 'Action non autorisée.'], 403);
+        }
+
+        if (in_array($appointment->status, ['completed', 'cancelled'], true)) {
+            return response()->json(['message' => 'Ce rendez-vous ne peut pas être annulé.'], 422);
+        }
+
+        $appointment->update(['status' => 'cancelled']);
+
+        return response()->json([
+            'message' => 'Rendez-vous annulé.',
+            'appointment' => $appointment->load(['dentist', 'treatment']),
+        ]);
     }
 }
