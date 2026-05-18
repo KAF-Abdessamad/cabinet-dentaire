@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\PatientApiController;
 use App\Http\Controllers\Api\AppointmentApiController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\InvoiceApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -45,6 +46,8 @@ Route::middleware(['auth:sanctum', 'web', 'force.json'])->group(function () {
         Route::get('/patient/dentists', [PatientDashboardController::class, 'dentists']);
         Route::get('/patient/invoices', [PatientDashboardController::class, 'invoices']);
         Route::get('/patient/treatments', [PatientDashboardController::class, 'treatments']);
+        Route::get('/holidays', [PatientDashboardController::class, 'holidays']);
+        Route::get('/patient/appointments/available-slots', [PatientDashboardController::class, 'availableSlots']);
         Route::post('/patient/appointments', [PatientDashboardController::class, 'storeAppointment']);
         Route::post('/patient/appointments/{appointment}/confirm', [PatientDashboardController::class, 'confirmAppointment']);
         Route::post('/patient/appointments/{appointment}/reject', [PatientDashboardController::class, 'rejectAppointment']);
@@ -66,13 +69,28 @@ Route::middleware(['auth:sanctum', 'web', 'force.json'])->group(function () {
         // Référentiels RDV (même logique que l’espace patient, autorisé pour le cabinet)
         Route::get('/cabinet/dentists', [PatientDashboardController::class, 'dentists']);
         Route::get('/cabinet/treatments', [PatientDashboardController::class, 'treatments']);
+        Route::post('/cabinet/treatments', [PatientDashboardController::class, 'storeTreatment']);
 
         // Appointments API
+        Route::get('/appointments/available-slots', [AppointmentApiController::class, 'getAvailableSlots']);
         Route::get('/check-availability', [AppointmentApiController::class, 'checkAvailability']);
         Route::get('/appointments', [AppointmentApiController::class, 'index']);
         Route::get('/appointments/{appointment}', [AppointmentApiController::class, 'show']);
         Route::post('/appointments', [AppointmentApiController::class, 'store']);
         Route::put('/appointments/{appointment}', [AppointmentApiController::class, 'update']);
         Route::delete('/appointments/{appointment}', [AppointmentApiController::class, 'destroy']);
+
+        // Holidays Admin API
+        Route::get('/admin/holidays', [AppointmentApiController::class, 'getHolidays']);
+        Route::post('/admin/holidays', [AppointmentApiController::class, 'storeHoliday']);
+        Route::delete('/admin/holidays/{holiday}', [AppointmentApiController::class, 'deleteHoliday']);
+
+        // Invoices Admin API
+        Route::get('/invoices', [InvoiceApiController::class, 'index']);
+        Route::post('/invoices', [InvoiceApiController::class, 'store']);
+        Route::get('/invoices/{invoice}', [InvoiceApiController::class, 'show']);
+        Route::post('/invoices/{invoice}/payments', [InvoiceApiController::class, 'addPayment']);
+        Route::get('/invoices/{invoice}/pdf', [InvoiceApiController::class, 'downloadPdf']);
+        Route::post('/invoices/{invoice}/email', [InvoiceApiController::class, 'sendEmail']);
     });
 });

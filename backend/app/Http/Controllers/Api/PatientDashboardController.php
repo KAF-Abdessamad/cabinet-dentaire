@@ -144,6 +144,102 @@ class PatientDashboardController extends Controller
     }
 
     /**
+     * Enregistrer un nouveau soin dans le cabinet (Admin uniquement).
+     */
+    public function storeTreatment(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:100|unique:treatments,name',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+        ]);
+
+        $treatment = Treatment::create($validated);
+
+        return response()->json($treatment, 201);
+    }
+
+    /**
+     * Get a list of closed holidays (Morocco fixed dates + Dynamic DB).
+     */
+    public function holidays(): JsonResponse
+    {
+        $dbHolidays = \App\Models\Holiday::all()->map(function($h) {
+            return $h->date instanceof \Carbon\Carbon ? $h->date->format('Y-m-d') : substr($h->date, 0, 10);
+        })->toArray();
+
+        $staticHolidays = [
+            '2025-01-01', '2025-01-11', '2025-01-14', '2025-05-01', '2025-07-30', '2025-08-14',
+            '2025-08-20', '2025-08-21', '2025-11-06', '2025-11-18',
+            '2026-01-01', '2026-01-11', '2026-01-14', '2026-05-01', '2026-07-30', '2026-08-14',
+            '2026-08-20', '2026-08-21', '2026-11-06', '2026-11-18',
+            '2027-01-01', '2027-01-11', '2027-01-14', '2027-05-01', '2027-07-30', '2027-08-14',
+            '2027-08-20', '2027-08-21', '2027-11-06', '2027-11-18',
+        ];
+
+        $allHolidays = array_unique(array_merge($dbHolidays, $staticHolidays));
+        sort($allHolidays);
+
+        return response()->json($allHolidays);
+    }
+
+    /**
+     * Get available 30-min slots for a given dentist, care type, and date.
+     */
+    public function availableSlots(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'date' => 'required|date_format:Y-m-d',
+            'dentist_id' => 'required|exists:users,id',
+            'care_type_id' => 'required|exists:treatments,id',
+        ]);
+
+        $date = $validated['date'];
+        $dentistId = (int)$validated['dentist_id'];
+
+        // Sunday or Holiday check
+        $carbonDate = \Carbon\Carbon::parse($date)->startOfDay();
+        $holidays = [
+            '2025-01-01', '2025-01-11', '2025-01-14', '2025-05-01', '2025-07-30', '2025-08-14',
+            '2025-08-20', '2025-08-21', '2025-11-06', '2025-11-18',
+            '2026-01-01', '2026-01-11', '2026-01-14', '2026-05-01', '2026-07-30', '2026-08-14',
+            '2026-08-20', '2026-08-21', '2026-11-06', '2026-11-18',
+            '2027-01-01', '2027-01-11', '2027-01-14', '2027-05-01', '2027-07-30', '2027-08-14',
+            '2027-08-20', '2027-08-21', '2027-11-06', '2027-11-18',
+        ];
+
+        if ($carbonDate->isSunday() || in_array($date, $holidays, true)) {
+            return response()->json([]);
+        }
+
+        // Daily working hours: 08:00 to 12:30 and 14:00 to 18:00
+        $allSlots = [
+            '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
+            '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'
+        ];
+
+        $availableSlots = [];
+        $appointmentService = app(\App\Services\AppointmentService::class);
+
+        foreach ($allSlots as $slot) {
+            $startsAt = \Carbon\Carbon::parse($date . ' ' . $slot);
+            $endsAt = (clone $startsAt)->addMinutes(30);
+
+            // Must be in the future
+            if ($startsAt->isPast()) {
+                continue;
+            }
+
+            // Dentist availability checks
+            if ($appointmentService->isAvailable($dentistId, $startsAt, $endsAt)) {
+                $availableSlots[] = $slot;
+            }
+        }
+
+        return response()->json($availableSlots);
+    }
+
+    /**
      * Crée un rendez-vous pour le patient connecté.
      */
     public function storeAppointment(Request $request): JsonResponse
@@ -158,8 +254,86 @@ class PatientDashboardController extends Controller
         $validated = $request->validate([
             'treatment_id' => 'required|exists:treatments,id',
             'patient_note' => 'nullable|string|max:1000',
+            'dentist_id' => 'nullable|exists:users,id',
+            'appointment_date' => 'nullable|date_format:Y-m-d',
+            'start_time' => 'nullable|string',
         ]);
 
+        // Slot-based direct booking
+        if (!empty($validated['appointment_date']) && !empty($validated['start_time']) && !empty($validated['dentist_id'])) {
+            $date = $validated['appointment_date'];
+            $startTime = $validated['start_time'];
+            $dentistId = (int)$validated['dentist_id'];
+
+            // 1. Block Sundays & Holidays
+            $carbonDate = \Carbon\Carbon::parse($date)->startOfDay();
+            $holidays = [
+                '2025-01-01', '2025-01-11', '2025-01-14', '2025-05-01', '2025-07-30', '2025-08-14',
+                '2025-08-20', '2025-08-21', '2025-11-06', '2025-11-18',
+                '2026-01-01', '2026-01-11', '2026-01-14', '2026-05-01', '2026-07-30', '2026-08-14',
+                '2026-08-20', '2026-08-21', '2026-11-06', '2026-11-18',
+                '2027-01-01', '2027-01-11', '2027-01-14', '2027-05-01', '2027-07-30', '2027-08-14',
+                '2027-08-20', '2027-08-21', '2027-11-06', '2027-11-18',
+            ];
+            if ($carbonDate->isSunday() || in_array($date, $holidays, true)) {
+                return response()->json(['message' => 'Le cabinet est fermé ce jour.'], 422);
+            }
+
+            $startsAt = \Carbon\Carbon::parse($date . ' ' . $startTime);
+            $endsAt = (clone $startsAt)->addMinutes(30);
+
+            // 2. Check dentist availability
+            $appointmentService = app(\App\Services\AppointmentService::class);
+            if (!$appointmentService->isAvailable($dentistId, $startsAt, $endsAt)) {
+                return response()->json(['message' => 'Ce créneau vient d\'être pris par un autre patient. Veuillez choisir un autre horaire.'], 409);
+            }
+
+            // 3. Durée minimum entre deux RDV du même patient: configurable (default: 24h)
+            $minHours = (int) env('MIN_HOURS_BETWEEN_APPOINTMENTS', 24);
+            $hasCloseAppointment = Appointment::where('patient_id', $patient->id)
+                ->where('status', 'confirmed')
+                ->where(function ($query) use ($startsAt, $minHours) {
+                    $query->whereBetween('starts_at', [
+                        (clone $startsAt)->subHours($minHours),
+                        (clone $startsAt)->addHours($minHours)
+                    ]);
+                })
+                ->exists();
+
+            if ($hasCloseAppointment) {
+                return response()->json([
+                    'message' => "❌ Durée minimum entre deux RDV du même patient non respectée. (Minimum {$minHours}h requises entre chaque rendez-vous)."
+                ], 422);
+            }
+
+            // Create appointment
+            $appointment = Appointment::create([
+                'patient_id' => $patient->id,
+                'user_id' => $dentistId,
+                'treatment_id' => $validated['treatment_id'],
+                'appointment_date' => $date,
+                'start_time' => $startTime,
+                'end_time' => $endsAt->format('H:i'),
+                'patient_note' => $validated['patient_note'] ?? null,
+                'status' => 'confirmed',
+            ])->load(['treatment', 'dentist']);
+
+            // Notify admins about the confirmed appointment
+            $admins = User::role('admin')->get();
+            foreach ($admins as $admin) {
+                \App\Models\Notification::create([
+                    'user_id' => $admin->id,
+                    'title' => 'Nouveau RDV en ligne',
+                    'message' => "Le patient {$patient->full_name} a planifié et confirmé un RDV pour le {$date} à {$startTime} (Soin : " . ($appointment->treatment->name ?? 'Soin') . ")",
+                    'type' => 'success',
+                    'link' => '/admin/appointments/' . $appointment->id,
+                ]);
+            }
+
+            return response()->json($appointment, 201);
+        }
+
+        // Standard fallback appointment request
         $data = [
             'patient_id' => $patient->id,
             'treatment_id' => $validated['treatment_id'],

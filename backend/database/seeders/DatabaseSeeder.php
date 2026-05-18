@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             DentistDemoSeeder::class,
             TreatmentSeeder::class,
+            HolidaysAndOpeningHoursSeeder::class,
         ]);
     }
 }

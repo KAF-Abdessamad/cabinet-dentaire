@@ -21,9 +21,24 @@ class AppointmentServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        
+        $this->seed(\Database\Seeders\RoleSeeder::class);
+        
         $this->service = new AppointmentService();
-        $this->dentist = User::factory()->create();
-        $this->patient = Patient::factory()->create();
+        
+        $this->dentist = User::create([
+            'name' => 'Dr. ServiceTest',
+            'email' => 'servicetest@dentistpro.com',
+            'password' => bcrypt('password'),
+        ]);
+        
+        $this->patient = Patient::create([
+            'first_name' => 'Service',
+            'last_name' => 'Patient',
+            'phone' => '0600000000',
+            'email' => 'service.patient@example.com',
+            'address' => 'Test Address',
+        ]);
     }
 
     public function test_dentist_is_available_when_no_appointments()

@@ -4,8 +4,9 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\File;
 
-function serveSpa() {
-    $indexPath = public_path('index.html');
+if (!function_exists('serveSpa')) {
+    function serveSpa() {
+        $indexPath = public_path('index.html');
 
     if (!File::exists($indexPath)) {
         return response()->make(
@@ -35,6 +36,7 @@ function serveSpa() {
     $content = str_replace('<head>', "<head>$metaTags", $content);
 
     return response($content)->header('Content-Type', 'text/html');
+    }
 }
 
 Route::get('/', function () {

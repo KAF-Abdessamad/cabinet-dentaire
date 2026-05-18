@@ -143,52 +143,25 @@ const PatientAppointmentsPage = () => {
                         </ul>
                     )}
                 </section>
-
-                <section className="rounded-3xl bg-white border border-dp-neutral-100 shadow-dp-card p-6">
-                    <h2 className="font-semibold text-dp-primary flex items-center gap-2 mb-6">
-                        <CalendarPlus className="h-5 w-5 text-dp-secondary" />
-                        Nouvelle demande
-                    </h2>
-                    {bookMsg.text && (
-                        <p
-                            className={`mb-4 text-sm px-4 py-3 rounded-xl flex items-center gap-2 ${
-                                bookMsg.type === 'ok' ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'
-                            }`}
-                        >
-                            {bookMsg.type === 'ok' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-                            {bookMsg.text}
+                <section className="rounded-3xl bg-white border border-dp-neutral-100 shadow-dp-card p-6 flex flex-col justify-between h-full">
+                    <div>
+                        <h2 className="font-semibold text-dp-primary flex items-center gap-2 mb-4">
+                            <CalendarPlus className="h-5 w-5 text-dp-secondary" />
+                            Prendre rendez-vous
+                        </h2>
+                        <p className="text-slate-500 text-sm leading-relaxed mb-6">
+                            Utilisez notre assistant de réservation en ligne interactif pour choisir votre type de soin, votre dentiste préféré, et sélectionner en temps réel le créneau horaire de votre choix sur notre calendrier intelligent.
                         </p>
-                    )}
-                    <form onSubmit={handleBookSubmit} className="space-y-4">
-                        <select
-                            required
-                            value={bookForm.treatment_id || treatments[0]?.id || ''}
-                            onChange={(e) => setBookForm((f) => ({ ...f, treatment_id: e.target.value }))}
-                            className="w-full rounded-xl border-2 border-dp-neutral-200 px-4 py-3 text-sm font-medium focus:border-dp-secondary outline-none"
-                        >
-                            {treatments.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                    {t.name} — {t.price} MAD
-                                </option>
-                            ))}
-                        </select>
-                        <textarea
-                            rows={3}
-                            placeholder="Notes ou disponibilités…"
-                            value={bookForm.patient_note}
-                            onChange={(e) => setBookForm((f) => ({ ...f, patient_note: e.target.value }))}
-                            className="w-full rounded-xl border-2 border-dp-neutral-200 px-4 py-3 text-sm resize-y focus:border-dp-secondary outline-none"
-                        />
-                        <button
-                            type="submit"
-                            disabled={booking}
-                            className="w-full py-3 rounded-xl bg-dp-primary text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                            {booking ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                                <>Envoyer <ChevronRight className="h-4 w-4" /></>
-                            )}
-                        </button>
-                    </form>
+                    </div>
+                    
+                    <button
+                        type="button"
+                        onClick={() => setBookOpen(true)}
+                        className="w-full py-4 rounded-xl bg-gradient-to-r from-dp-primary to-[#2E8B8B] hover:from-[#152E56] hover:to-[#226363] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-dp-primary/10 transition-all active:scale-[0.98]"
+                    >
+                        <CalendarPlus className="h-5 w-5" />
+                        Démarrer la réservation en ligne
+                    </button>
                 </section>
             </div>
 

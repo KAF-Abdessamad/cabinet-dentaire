@@ -24,14 +24,23 @@ class PatientApiController extends Controller
             });
         }
 
-        $patients = $query->latest()->paginate(10);
+        if ($request->boolean('all')) {
+            $patients = $query->latest()->get();
+        } else {
+            $patients = $query->latest()->paginate(10);
+        }
 
         return response()->json($patients);
     }
 
     public function show(Patient $patient): JsonResponse
     {
-        $patient->load(['appointments', 'invoices']);
+        $patient->load([
+            'appointments.dentist',
+            'appointments.treatment',
+            'invoices.payments',
+            'prescriptions'
+        ]);
         return response()->json($patient);
     }
 
@@ -45,6 +54,15 @@ class PatientApiController extends Controller
             'birth_date' => 'nullable|date',
             'address' => 'nullable|string|max:255',
             'cin' => 'nullable|string|max:20|unique:patients,cin',
+            'gender' => 'nullable|string|max:20',
+            'blood_group' => 'nullable|string|max:10',
+            'allergies' => 'nullable|string',
+            'medical_history' => 'nullable|string',
+            'chronic_diseases' => 'nullable|string',
+            'current_medications' => 'nullable|string',
+            'emergency_contact_name' => 'nullable|string|max:100',
+            'emergency_contact_relation' => 'nullable|string|max:50',
+            'emergency_contact_phone' => 'nullable|string|max:25',
         ]);
 
         $patient = Patient::create($validated);
@@ -62,6 +80,15 @@ class PatientApiController extends Controller
             'birth_date' => 'nullable|date',
             'address' => 'nullable|string|max:255',
             'cin' => 'nullable|string|max:20|unique:patients,cin,' . $patient->id,
+            'gender' => 'nullable|string|max:20',
+            'blood_group' => 'nullable|string|max:10',
+            'allergies' => 'nullable|string',
+            'medical_history' => 'nullable|string',
+            'chronic_diseases' => 'nullable|string',
+            'current_medications' => 'nullable|string',
+            'emergency_contact_name' => 'nullable|string|max:100',
+            'emergency_contact_relation' => 'nullable|string|max:50',
+            'emergency_contact_phone' => 'nullable|string|max:25',
         ]);
 
         $patient->update($validated);

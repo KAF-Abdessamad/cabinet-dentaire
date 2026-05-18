@@ -50,7 +50,10 @@ class Appointment extends Model
             }
 
             // Sync starts_at/ends_at with appointment_date/start_time if they are dirty
-            if ($appointment->appointment_date && $appointment->start_time) {
+            if ($appointment->status === 'cancelled') {
+                $appointment->starts_at = null;
+                $appointment->ends_at = null;
+            } elseif ($appointment->appointment_date && $appointment->start_time) {
                 $date = $appointment->appointment_date instanceof \Carbon\Carbon 
                     ? $appointment->appointment_date->format('Y-m-d') 
                     : $appointment->appointment_date;

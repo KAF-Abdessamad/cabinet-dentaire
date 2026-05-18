@@ -24,6 +24,11 @@ class Patient extends Model
         'blood_group',
         'allergies',
         'medical_history',
+        'chronic_diseases',
+        'current_medications',
+        'emergency_contact_name',
+        'emergency_contact_relation',
+        'emergency_contact_phone',
     ];
 
     protected $casts = [

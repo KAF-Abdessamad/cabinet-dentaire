@@ -8,6 +8,7 @@ use App\Http\Requests\UpdatePatientRequest;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 
 class PatientController extends Controller
 {
@@ -16,6 +17,8 @@ class PatientController extends Controller
      */
     public function index(Request $request): View
     {
+        Gate::authorize('viewAny', Patient::class);
+
         $query = Patient::query();
 
         // Search by keyword (name, phone, email, CIN)
@@ -50,6 +53,8 @@ class PatientController extends Controller
      */
     public function create(): View
     {
+        Gate::authorize('create', Patient::class);
+
         return view('patients.create');
     }
 
@@ -58,6 +63,8 @@ class PatientController extends Controller
      */
     public function store(StorePatientRequest $request): RedirectResponse
     {
+        Gate::authorize('create', Patient::class);
+
         Patient::create($request->validated());
 
         return redirect()->route('patients.index')
@@ -69,6 +76,8 @@ class PatientController extends Controller
      */
     public function show(Patient $patient): View
     {
+        Gate::authorize('view', $patient);
+
         $patient->load([
             'appointments' => function ($query) {
                 $query->latest();
@@ -89,6 +98,8 @@ class PatientController extends Controller
      */
     public function edit(Patient $patient): View
     {
+        Gate::authorize('update', $patient);
+
         return view('patients.edit', compact('patient'));
     }
 
@@ -97,6 +108,8 @@ class PatientController extends Controller
      */
     public function update(UpdatePatientRequest $request, Patient $patient): RedirectResponse
     {
+        Gate::authorize('update', $patient);
+
         $patient->update($request->validated());
 
         return redirect()->route('patients.index')
@@ -108,6 +121,8 @@ class PatientController extends Controller
      */
     public function destroy(Patient $patient): RedirectResponse
     {
+        Gate::authorize('delete', $patient);
+
         $patient->delete();
 
         return redirect()->route('patients.index')

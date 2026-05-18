@@ -25,7 +25,9 @@ return new class extends Migration
         // Use raw query to update enum if needed, or just rely on the application logic 
         // if the DB doesn't strictly enforce it. Laravel's enum can be flexible.
         // However, let's try to update it properly.
-        DB::statement("ALTER TABLE appointments MODIFY COLUMN status ENUM('requested', 'proposed', 'confirmed', 'completed', 'cancelled') DEFAULT 'requested'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE appointments MODIFY COLUMN status ENUM('requested', 'proposed', 'confirmed', 'completed', 'cancelled') DEFAULT 'requested'");
+        }
     }
 
     public function down(): void
@@ -37,6 +39,8 @@ return new class extends Migration
             $table->dropConstrainedForeignId('treatment_id');
             $table->dropColumn(['patient_note', 'admin_note']);
         });
-        DB::statement("ALTER TABLE appointments MODIFY COLUMN status ENUM('pending', 'confirmed', 'completed', 'cancelled') DEFAULT 'pending'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE appointments MODIFY COLUMN status ENUM('pending', 'confirmed', 'completed', 'cancelled') DEFAULT 'pending'");
+        }
     }
 };

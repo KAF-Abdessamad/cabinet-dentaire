@@ -4,10 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
+use App\Models\Holiday;
 use App\Services\AppointmentService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use App\Jobs\SendAppointmentConfirmationJob;
 
 class AppointmentApiController extends Controller
 {
@@ -16,6 +21,72 @@ class AppointmentApiController extends Controller
     public function __construct(AppointmentService $appointmentService)
     {
         $this->appointmentService = $appointmentService;
+    }
+
+    private function getTreatmentDuration(string $treatmentName): int
+    {
+        $name = mb_strtolower($treatmentName, 'UTF-8');
+        if (str_contains($name, 'détartrage') || str_contains($name, 'detartrage')) return 30;
+        if (str_contains($name, 'consultation')) return 30;
+        if (str_contains($name, 'extraction')) return 60;
+        if (str_contains($name, 'plombage')) return 45;
+        if (str_contains($name, 'blanchiment')) return 60;
+        if (str_contains($name, 'implant')) return 90;
+        return 30; // default duration
+    }
+
+    public function getAvailableSlots(Request $request): JsonResponse
+    {
+        $request->validate([
+            'date' => 'required|date_format:Y-m-d',
+            'user_id' => 'required|exists:users,id',
+            'duration' => 'nullable|integer|min:15',
+        ]);
+
+        $date = $request->date;
+        $dentistId = (int) $request->user_id;
+        $duration = (int) ($request->duration ?? 30);
+
+        $carbonDate = Carbon::parse($date)->startOfDay();
+
+        // 1. Sunday check
+        if ($this->appointmentService->isSunday($carbonDate)) {
+            return response()->json([]);
+        }
+
+        // 2. Holiday check
+        if ($this->appointmentService->isHoliday($carbonDate)) {
+            return response()->json([]);
+        }
+
+        // Standard 30-min intervals
+        $allSlots = [
+            '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
+            '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'
+        ];
+
+        $availableSlots = [];
+
+        foreach ($allSlots as $slot) {
+            $startsAt = Carbon::parse($date . ' ' . $slot);
+            $endsAt = (clone $startsAt)->addMinutes($duration);
+
+            // Time must be inside cabinet open hours
+            if ($this->appointmentService->isOutsideOpeningHours($startsAt, $endsAt)) {
+                continue;
+            }
+
+            // Must be future
+            if ($startsAt->isPast()) {
+                continue;
+            }
+
+            if ($this->appointmentService->isAvailable($dentistId, $startsAt, $endsAt)) {
+                $availableSlots[] = $slot;
+            }
+        }
+
+        return response()->json($availableSlots);
     }
 
     public function checkAvailability(Request $request): JsonResponse
@@ -72,25 +143,89 @@ class AppointmentApiController extends Controller
             'treatment_id' => 'nullable|exists:treatments,id',
             'appointment_date' => 'required|date',
             'start_time' => 'required',
-            'end_time' => 'required|after:start_time',
+            'end_time' => 'nullable',
             'reason' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
             'status' => 'nullable|in:requested,proposed,confirmed,completed,cancelled',
         ]);
 
-        if ($this->appointmentDateIsClosed($validated['appointment_date'])) {
-            return $this->closedCalendarDayError();
+        $date = $validated['appointment_date'];
+        $startTime = $validated['start_time'];
+        $dentistId = (int)$validated['user_id'];
+        
+        $start = Carbon::parse($date . ' ' . $startTime);
+
+        // Get treatment duration
+        $duration = 30;
+        if (!empty($validated['treatment_id'])) {
+            $treatment = \App\Models\Treatment::find($validated['treatment_id']);
+            if ($treatment) {
+                $duration = $this->getTreatmentDuration($treatment->name);
+            }
+        }
+        
+        $end = $start->copy()->addMinutes($duration);
+        $validated['end_time'] = $end->format('H:i:s');
+
+        // Order of verification:
+        // 1. Sunday
+        if ($this->appointmentService->isSunday($start)) {
+            return response()->json(['error' => 'Le cabinet est fermé le dimanche.'], 422);
         }
 
-        $startsAt = Carbon::parse($validated['appointment_date'] . ' ' . $validated['start_time']);
-        $endsAt = Carbon::parse($validated['appointment_date'] . ' ' . $validated['end_time']);
-
-        if (!$this->appointmentService->isAvailable($validated['user_id'], $startsAt, $endsAt)) {
-            return response()->json(['error' => 'Le dentiste n\'est pas disponible sur ce créneau (marge de 5 min incluse).'], 422);
+        // 2. Holiday
+        if ($this->appointmentService->isHoliday($start)) {
+            return response()->json(['error' => 'Ce jour est un jour férié — le cabinet est fermé.'], 422);
         }
 
-        $appointment = Appointment::create($validated)->load(['patient', 'dentist', 'treatment']);
-        return response()->json($appointment, 201);
+        // 3. Hors horaires
+        if ($this->appointmentService->isOutsideOpeningHours($start, $end)) {
+            return response()->json(['error' => 'L\'heure choisie est en dehors des horaires d\'ouverture du cabinet.'], 422);
+        }
+
+        // 4. Double RDV même patient
+        if (env('ONE_APPOINTMENT_PER_DAY_PER_PATIENT', false)) {
+            $exists = Appointment::where('patient_id', $validated['patient_id'])
+                ->whereDate('appointment_date', $start->toDateString())
+                ->whereNotIn('status', ['cancelled'])
+                ->exists();
+            if ($exists) {
+                return response()->json(['error' => 'Ce patient a déjà un rendez-vous ce jour-là.'], 422);
+            }
+        }
+
+        // 5. Conflit chevauchement avec lock pessimiste
+        try {
+            $appointment = DB::transaction(function() use ($validated, $dentistId, $start, $end) {
+                // Pessimistic lock
+                $conflict = Appointment::where('user_id', $dentistId)
+                    ->lockForUpdate()
+                    ->whereNotIn('status', ['cancelled'])
+                    ->where(function($query) use ($start, $end) {
+                        $query->where('starts_at', '<', $end)
+                              ->where('ends_at', '>', $start);
+                    })
+                    ->exists();
+
+                if ($conflict) {
+                    throw new \Exception('Ce créneau est déjà réservé par un autre patient.');
+                }
+
+                // Force status to confirmed for admin bookings unless specified
+                $validated['status'] = $validated['status'] ?? 'confirmed';
+
+                return Appointment::create($validated);
+            });
+
+            // Dispatch Queued Confirmation Mail
+            if ($appointment->status === 'confirmed') {
+                SendAppointmentConfirmationJob::dispatch($appointment);
+            }
+
+            return response()->json($appointment->load(['patient', 'dentist', 'treatment']), 201);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 409);
+        }
     }
 
     public function update(Request $request, Appointment $appointment): JsonResponse
@@ -101,7 +236,7 @@ class AppointmentApiController extends Controller
             'treatment_id' => 'nullable|exists:treatments,id',
             'appointment_date' => 'sometimes|required|date',
             'start_time' => 'sometimes|required',
-            'end_time' => 'sometimes|required|after:start_time',
+            'end_time' => 'nullable',
             'status' => 'sometimes|required|in:requested,proposed,confirmed,completed,cancelled',
             'reason' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
@@ -114,45 +249,114 @@ class AppointmentApiController extends Controller
         }
 
         $dentistId = (int) ($validated['user_id'] ?? $appointment->user_id);
+        $patientId = (int) ($validated['patient_id'] ?? $appointment->patient_id);
+        $date = $validated['appointment_date'] ?? $appointment->appointment_date->format('Y-m-d');
+        $startTime = $validated['start_time'] ?? $appointment->start_time;
 
-        // Check availability if time or dentist changes
-        if (isset($validated['appointment_date']) || isset($validated['start_time']) || isset($validated['end_time']) || isset($validated['user_id'])) {
-            $date = $validated['appointment_date'] ?? ($appointment->appointment_date ? $appointment->appointment_date->format('Y-m-d') : null);
-            if (!$date) {
-                return response()->json(['error' => 'La date du rendez-vous est requise.'], 422);
+        $start = Carbon::parse($date . ' ' . $startTime);
+
+        // Get treatment duration
+        $treatmentId = $validated['treatment_id'] ?? $appointment->treatment_id;
+        $duration = 30;
+        if ($treatmentId) {
+            $treatment = \App\Models\Treatment::find($treatmentId);
+            if ($treatment) {
+                $duration = $this->getTreatmentDuration($treatment->name);
             }
+        }
+        
+        $end = $start->copy()->addMinutes($duration);
+        $validated['end_time'] = $end->format('H:i:s');
 
-            if ($this->appointmentDateIsClosed($date)) {
-                return $this->closedCalendarDayError();
-            }
+        // Order of verification:
+        // 1. Sunday
+        if ($this->appointmentService->isSunday($start)) {
+            return response()->json(['error' => 'Le cabinet est fermé le dimanche.'], 422);
+        }
 
-            $start = $validated['start_time'] ?? $appointment->start_time;
-            $end = $validated['end_time'] ?? $appointment->end_time;
-            if (!$start || !$end) {
-                return response()->json(['error' => 'Les heures de début et de fin sont requises.'], 422);
-            }
+        // 2. Holiday
+        if ($this->appointmentService->isHoliday($start)) {
+            return response()->json(['error' => 'Ce jour est un jour férié — le cabinet est fermé.'], 422);
+        }
 
-            $startsAt = Carbon::parse($date . ' ' . $start);
-            $endsAt = Carbon::parse($date . ' ' . $end);
+        // 3. Hors horaires
+        if ($this->appointmentService->isOutsideOpeningHours($start, $end)) {
+            return response()->json(['error' => 'L\'heure choisie est en dehors des horaires d\'ouverture du cabinet.'], 422);
+        }
 
-            if (!$dentistId) {
-                return response()->json(['error' => 'Veuillez sélectionner un dentiste.'], 422);
-            }
-
-            if (!$this->appointmentService->isAvailable($dentistId, $startsAt, $endsAt, $appointment->id)) {
-                return response()->json(['error' => 'Le dentiste n\'est pas disponible sur ce créneau.'], 422);
+        // 4. Double RDV même patient
+        if (env('ONE_APPOINTMENT_PER_DAY_PER_PATIENT', false)) {
+            $exists = Appointment::where('patient_id', $patientId)
+                ->where('id', '!=', $appointment->id)
+                ->whereDate('appointment_date', $start->toDateString())
+                ->whereNotIn('status', ['cancelled'])
+                ->exists();
+            if ($exists) {
+                return response()->json(['error' => 'Ce patient a déjà un rendez-vous ce jour-là.'], 422);
             }
         }
 
+        // 5. Conflit chevauchement avec lock pessimiste
         try {
-            $appointment->update($validated);
+            $oldStatus = $appointment->status;
+            DB::transaction(function() use ($validated, $dentistId, $start, $end, $appointment) {
+                // Pessimistic lock
+                $conflict = Appointment::where('user_id', $dentistId)
+                    ->where('id', '!=', $appointment->id)
+                    ->lockForUpdate()
+                    ->whereNotIn('status', ['cancelled'])
+                    ->where(function($query) use ($start, $end) {
+                        $query->where('starts_at', '<', $end)
+                              ->where('ends_at', '>', $start);
+                    })
+                    ->exists();
+
+                if ($conflict) {
+                    throw new \Exception('Ce créneau est déjà réservé par un autre patient.');
+                }
+
+                $oldStatus = $appointment->status;
+                $appointment->update($validated);
+
+                if ($appointment->status === 'completed' && $oldStatus !== 'completed') {
+                    $totalAmount = $appointment->treatments->sum(function($treatment) {
+                        return $treatment->pivot->applied_price * $treatment->pivot->quantity;
+                    });
+                    
+                    if ($totalAmount === 0 && $appointment->treatment) {
+                        $totalAmount = $appointment->treatment->price;
+                    }
+
+                    if (!$appointment->invoice && $totalAmount > 0) {
+                        \App\Models\Invoice::create([
+                            'patient_id' => $appointment->patient_id,
+                            'appointment_id' => $appointment->id,
+                            'total_amount' => $totalAmount,
+                            'status' => 'pending',
+                            'invoice_date' => now(),
+                        ]);
+                    }
+                }
+            });
+
+            // Dispatch notification triggers post-update
+            if ($appointment->status === 'confirmed' && $oldStatus !== 'confirmed') {
+                SendAppointmentConfirmationJob::dispatch($appointment);
+            } elseif ($appointment->status === 'cancelled' && $oldStatus !== 'cancelled') {
+                if ($appointment->patient && $appointment->patient->email) {
+                    try {
+                        Mail::to($appointment->patient->email)
+                            ->send(new \App\Mail\AppointmentCancellationMail($appointment));
+                    } catch (\Exception $ex) {
+                        Log::error("Failed to send cancellation email: " . $ex->getMessage());
+                    }
+                }
+            }
+
+            return response()->json($appointment->load(['patient', 'dentist', 'treatment']));
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 422);
+            return response()->json(['error' => $e->getMessage()], 409);
         }
-
-        $appointment->load(['patient', 'dentist', 'treatment']);
-
-        return response()->json($appointment);
     }
 
     public function destroy(Appointment $appointment): JsonResponse
@@ -161,33 +365,27 @@ class AppointmentApiController extends Controller
         return response()->json(['message' => 'Appointment deleted successfully']);
     }
 
-    /** Jours fériés fixes (Maroc) — format Y-m-d */
-    private function moroccoFixedHolidayDates(): array
+    // Holidays Admin Management
+    public function getHolidays(): JsonResponse
     {
-        return [
-            '2025-01-01', '2025-01-11', '2025-01-14', '2025-05-01', '2025-07-30', '2025-08-14',
-            '2025-08-20', '2025-08-21', '2025-11-06', '2025-11-18',
-            '2026-01-01', '2026-01-11', '2026-01-14', '2026-05-01', '2026-07-30', '2026-08-14',
-            '2026-08-20', '2026-08-21', '2026-11-06', '2026-11-18',
-            '2027-01-01', '2027-01-11', '2027-01-14', '2027-05-01', '2027-07-30', '2027-08-14',
-            '2027-08-20', '2027-08-21', '2027-11-06', '2027-11-18',
-        ];
+        return response()->json(Holiday::orderBy('date')->get());
     }
 
-    private function appointmentDateIsClosed(string $dateYmd): bool
+    public function storeHoliday(Request $request): JsonResponse
     {
-        $d = Carbon::parse($dateYmd)->startOfDay();
-        if ($d->isSunday()) {
-            return true;
-        }
+        $validated = $request->validate([
+            'date' => 'required|date|unique:holidays,date',
+            'label' => 'required|string|max:255',
+            'is_recurring' => 'nullable|boolean',
+        ]);
 
-        return in_array($d->format('Y-m-d'), $this->moroccoFixedHolidayDates(), true);
+        $holiday = Holiday::create($validated);
+        return response()->json($holiday, 201);
     }
 
-    private function closedCalendarDayError(): JsonResponse
+    public function deleteHoliday(Holiday $holiday): JsonResponse
     {
-        return response()->json([
-            'error' => 'Les rendez-vous ne peuvent pas être planifiés un dimanche ni un jour férié (calendrier marocain, jours fériés fixes).',
-        ], 422);
+        $holiday->delete();
+        return response()->json(['message' => 'Jour férié supprimé avec succès']);
     }
 }

@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Appointment;
+use App\Models\Holiday;
+use App\Models\OpeningHour;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -10,28 +12,82 @@ class AppointmentService
 {
     /**
      * Check if a dentist is available for a given time slot.
-     * Includes a 5-minute margin between appointments.
+     * Incorporates the new strict conflict rules.
      */
     public function isAvailable(int $dentistId, Carbon $startsAt, Carbon $endsAt, ?int $excludeAppointmentId = null): bool
     {
-        $marginMinutes = 5;
+        // 5-minute gap pause between appointments (configurable in Settings or env)
+        $pauseMinutes = (int) env('APPOINTMENT_GAP_PAUSE_MINUTES', 5);
 
-        // Apply margin
-        $checkStartsAt = (clone $startsAt)->subMinutes($marginMinutes);
-        $checkEndsAt = (clone $endsAt)->addMinutes($marginMinutes);
+        // Apply gap check: a new appointment cannot overlap with existing appointments + their gap
+        $checkStartsAt = (clone $startsAt)->subMinutes($pauseMinutes);
+        $checkEndsAt = (clone $endsAt)->addMinutes($pauseMinutes);
 
         return !Appointment::where('user_id', $dentistId)
-            ->where('status', 'confirmed')
+            ->where('id', '!=', $excludeAppointmentId)
+            ->whereNotIn('status', ['cancelled'])
             ->where(function ($query) use ($checkStartsAt, $checkEndsAt) {
-                $query->where(function ($q) use ($checkStartsAt, $checkEndsAt) {
-                    $q->where('starts_at', '<', $checkEndsAt)
+                // Overlap detection using gap boundaries
+                $query->where('starts_at', '<', $checkEndsAt)
                       ->where('ends_at', '>', $checkStartsAt);
-                });
-            })
-            ->when($excludeAppointmentId, function ($query) use ($excludeAppointmentId) {
-                return $query->where('id', '!=', $excludeAppointmentId);
             })
             ->exists();
+    }
+
+    /**
+     * strict conflict check following exact requirements
+     */
+    public function hasConflict(int $dentistId, Carbon $start, int $durationMinutes, ?int $excludeId = null): bool
+    {
+        $end = $start->copy()->addMinutes($durationMinutes);
+        
+        return Appointment::where('user_id', $dentistId)
+            ->where('id', '!=', $excludeId)
+            ->whereNotIn('status', ['cancelled'])
+            ->where(function($query) use ($start, $end) {
+                $query->where('starts_at', '<', $end)
+                      ->where('ends_at', '>', $start);
+            })
+            ->exists();
+    }
+
+    /**
+     * Check if day is Sunday
+     */
+    public function isSunday(Carbon $date): bool
+    {
+        return $date->dayOfWeek === Carbon::SUNDAY;
+    }
+
+    /**
+     * Check if day is a Holiday (Morocco fixed dates + dynamic database)
+     */
+    public function isHoliday(Carbon $date): bool
+    {
+        return Holiday::where('date', $date->toDateString())
+            ->orWhere(function($q) use ($date) {
+                $q->where('is_recurring', true)
+                  ->whereMonth('date', $date->month)
+                  ->whereDay('date', $date->day);
+            })->exists();
+    }
+
+    /**
+     * Check if a time slot is outside opening hours
+     */
+    public function isOutsideOpeningHours(Carbon $start, Carbon $end): bool
+    {
+        $dayOfWeek = $start->dayOfWeek; // 0=Sunday to 6=Saturday
+        
+        $oh = OpeningHour::where('day_of_week', $dayOfWeek)->first();
+        if (!$oh || $oh->is_closed) {
+            return true;
+        }
+
+        $startStr = $start->format('H:i:s');
+        $endStr = $end->format('H:i:s');
+
+        return ($startStr < $oh->open_time || $endStr > $oh->close_time);
     }
 
     /**
@@ -42,13 +98,12 @@ class AppointmentService
         $currentStatus = $appointment->status;
         
         $allowedTransitions = [
-            // Le cabinet peut proposer un créneau ou confirmer directement une demande en ligne.
             'requested' => ['proposed', 'confirmed', 'cancelled'],
             'proposed' => ['confirmed', 'cancelled', 'requested'],
-            'pending' => ['confirmed', 'cancelled'], // Support pending if used
+            'pending' => ['confirmed', 'cancelled'],
             'confirmed' => ['completed', 'cancelled'],
-            'completed' => [], // Final state
-            'cancelled' => ['requested'], // Allow re-requesting if cancelled
+            'completed' => [],
+            'cancelled' => ['requested', 'confirmed'],
         ];
 
         if (!isset($allowedTransitions[$currentStatus])) {

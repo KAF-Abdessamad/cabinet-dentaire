@@ -162,16 +162,16 @@ class AppointmentController extends Controller
         $data = $request->validated();
 
         if (isset($data['appointment_date']) && isset($data['start_time']) && isset($data['user_id'])) {
+            $start = Carbon::parse($data['appointment_date'] . ' ' . $data['start_time']);
+            $end = isset($data['end_time']) 
+                ? Carbon::parse($data['appointment_date'] . ' ' . $data['end_time']) 
+                : $start->copy()->addMinutes(30);
+
             $conflict = Appointment::where('user_id', $data['user_id'])
-                ->where('appointment_date', $data['appointment_date'])
-                ->where('status', 'confirmed')
-                ->where(function ($query) use ($data) {
-                    $query->whereBetween('start_time', [$data['start_time'], $data['end_time']])
-                        ->orWhereBetween('end_time', [$data['start_time'], $data['end_time']])
-                        ->orWhere(function ($q) use ($data) {
-                            $q->where('start_time', '<=', $data['start_time'])
-                                ->where('end_time', '>=', $data['end_time']);
-                        });
+                ->whereNotIn('status', ['cancelled'])
+                ->where(function ($query) use ($start, $end) {
+                    $query->where('starts_at', '<', $end)
+                          ->where('ends_at', '>', $start);
                 })
                 ->exists();
 

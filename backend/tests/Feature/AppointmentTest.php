@@ -23,16 +23,40 @@ class AppointmentTest extends TestCase
     {
         parent::setUp();
         
-        $this->admin = User::factory()->create();
+        $this->seed(\Database\Seeders\RoleSeeder::class);
+        
+        // Admin
+        $this->admin = User::create([
+            'name' => 'Admin User',
+            'email' => 'admin@dentistpro.com',
+            'password' => bcrypt('password'),
+        ]);
         $this->admin->assignRole('admin');
         
-        $this->secretary = User::factory()->create();
-        $this->secretary->assignRole('secretary');
+        // Secretary (we assign assistant role to pass role:admin|dentiste|assistant middleware)
+        $this->secretary = User::create([
+            'name' => 'Secretary User',
+            'email' => 'secretary@dentistpro.com',
+            'password' => bcrypt('password'),
+        ]);
+        $this->secretary->assignRole('assistant');
         
-        $this->dentist = User::factory()->create();
-        $this->dentist->assignRole('dentist');
+        // Dentist (we assign dentiste role)
+        $this->dentist = User::create([
+            'name' => 'Dentist User',
+            'email' => 'dentist@dentistpro.com',
+            'password' => bcrypt('password'),
+        ]);
+        $this->dentist->assignRole('dentiste');
         
-        $this->patient = Patient::factory()->create();
+        // Patient
+        $this->patient = Patient::create([
+            'first_name' => 'Jean',
+            'last_name' => 'Dupont',
+            'phone' => '0612345678',
+            'email' => 'jean.dupont@example.com',
+            'address' => '123 Rue Principale'
+        ]);
     }
 
     public function test_admin_can_view_appointments(): void
@@ -52,7 +76,7 @@ class AppointmentTest extends TestCase
             'appointment_date' => Carbon::tomorrow()->format('Y-m-d'),
             'start_time' => '09:00',
             'end_time' => '10:00',
-            'status' => 'pending',
+            'status' => 'confirmed',
             'reason' => 'Consultation',
         ];
 
@@ -72,21 +96,31 @@ class AppointmentTest extends TestCase
     {
         $date = Carbon::tomorrow()->format('Y-m-d');
         
-        Appointment::factory()->create([
+        Appointment::create([
             'user_id' => $this->dentist->id,
             'patient_id' => $this->patient->id,
             'appointment_date' => $date,
             'start_time' => '09:00',
             'end_time' => '10:00',
+            'starts_at' => Carbon::tomorrow()->setTime(9, 0),
+            'ends_at' => Carbon::tomorrow()->setTime(10, 0),
+            'status' => 'confirmed',
+        ]);
+
+        $otherPatient = Patient::create([
+            'first_name' => 'Marc',
+            'last_name' => 'Lenoir',
+            'phone' => '0698765432',
+            'email' => 'marc.lenoir@example.com'
         ]);
 
         $conflictingData = [
-            'patient_id' => Patient::factory()->create()->id,
+            'patient_id' => $otherPatient->id,
             'user_id' => $this->dentist->id,
             'appointment_date' => $date,
             'start_time' => '09:30',
             'end_time' => '10:30',
-            'status' => 'pending',
+            'status' => 'confirmed',
         ];
 
         $response = $this->actingAs($this->admin)
@@ -97,9 +131,15 @@ class AppointmentTest extends TestCase
 
     public function test_dentist_can_update_own_appointment(): void
     {
-        $appointment = Appointment::factory()->create([
+        $appointment = Appointment::create([
             'user_id' => $this->dentist->id,
             'patient_id' => $this->patient->id,
+            'appointment_date' => Carbon::tomorrow()->format('Y-m-d'),
+            'start_time' => '09:00',
+            'end_time' => '09:30',
+            'starts_at' => Carbon::tomorrow()->setTime(9, 0),
+            'ends_at' => Carbon::tomorrow()->setTime(9, 30),
+            'status' => 'confirmed',
         ]);
 
         $response = $this->actingAs($this->dentist)
@@ -107,7 +147,7 @@ class AppointmentTest extends TestCase
                 'status' => 'completed',
             ]);
 
-        $response->assertOk();
+        $response->assertRedirect();
         $this->assertDatabaseHas('appointments', [
             'id' => $appointment->id,
             'status' => 'completed',
@@ -116,12 +156,22 @@ class AppointmentTest extends TestCase
 
     public function test_dentist_cannot_update_other_dentist_appointment(): void
     {
-        $otherDentist = User::factory()->create();
-        $otherDentist->assignRole('dentist');
+        $otherDentist = User::create([
+            'name' => 'Dr. Jones',
+            'email' => 'jones@dentistpro.com',
+            'password' => bcrypt('password'),
+        ]);
+        $otherDentist->assignRole('dentiste');
         
-        $appointment = Appointment::factory()->create([
+        $appointment = Appointment::create([
             'user_id' => $otherDentist->id,
             'patient_id' => $this->patient->id,
+            'appointment_date' => Carbon::tomorrow()->format('Y-m-d'),
+            'start_time' => '09:00',
+            'end_time' => '09:30',
+            'starts_at' => Carbon::tomorrow()->setTime(9, 0),
+            'ends_at' => Carbon::tomorrow()->setTime(9, 30),
+            'status' => 'confirmed',
         ]);
 
         $response = $this->actingAs($this->dentist)
@@ -134,11 +184,20 @@ class AppointmentTest extends TestCase
 
     public function test_completed_appointment_creates_invoice(): void
     {
-        $treatment = Treatment::factory()->create(['price' => 100]);
+        $treatment = Treatment::create([
+            'name' => 'Consultation',
+            'price' => 100,
+            'duration' => 30
+        ]);
         
-        $appointment = Appointment::factory()->create([
+        $appointment = Appointment::create([
             'user_id' => $this->dentist->id,
             'patient_id' => $this->patient->id,
+            'appointment_date' => Carbon::tomorrow()->format('Y-m-d'),
+            'start_time' => '09:00',
+            'end_time' => '09:30',
+            'starts_at' => Carbon::tomorrow()->setTime(9, 0),
+            'ends_at' => Carbon::tomorrow()->setTime(9, 30),
             'status' => 'confirmed',
         ]);
         
@@ -152,7 +211,7 @@ class AppointmentTest extends TestCase
                 'status' => 'completed',
             ]);
 
-        $response->assertOk();
+        $response->assertRedirect();
         
         $this->assertDatabaseHas('invoices', [
             'patient_id' => $this->patient->id,
@@ -163,28 +222,43 @@ class AppointmentTest extends TestCase
 
     public function test_admin_can_delete_appointment(): void
     {
-        $appointment = Appointment::factory()->create([
+        $appointment = Appointment::create([
             'user_id' => $this->dentist->id,
             'patient_id' => $this->patient->id,
+            'appointment_date' => Carbon::tomorrow()->format('Y-m-d'),
+            'start_time' => '09:00',
+            'end_time' => '09:30',
+            'starts_at' => Carbon::tomorrow()->setTime(9, 0),
+            'ends_at' => Carbon::tomorrow()->setTime(9, 30),
+            'status' => 'confirmed',
         ]);
 
         $response = $this->actingAs($this->admin)
             ->delete(route('appointments.destroy', $appointment));
 
         $response->assertRedirect(route('appointments.index'));
-        $this->assertDatabaseMissing('appointments', ['id' => $appointment->id]);
+        $this->assertSoftDeleted($appointment);
     }
 
     public function test_cannot_delete_appointment_with_invoice(): void
     {
-        $appointment = Appointment::factory()->create([
+        $appointment = Appointment::create([
             'user_id' => $this->dentist->id,
             'patient_id' => $this->patient->id,
+            'appointment_date' => Carbon::tomorrow()->format('Y-m-d'),
+            'start_time' => '09:00',
+            'end_time' => '09:30',
+            'starts_at' => Carbon::tomorrow()->setTime(9, 0),
+            'ends_at' => Carbon::tomorrow()->setTime(9, 30),
+            'status' => 'confirmed',
         ]);
         
-        \App\Models\Invoice::factory()->create([
+        \App\Models\Invoice::create([
             'appointment_id' => $appointment->id,
             'patient_id' => $this->patient->id,
+            'total_amount' => 100,
+            'status' => 'unpaid',
+            'invoice_date' => now(),
         ]);
 
         $response = $this->actingAs($this->admin)
@@ -198,11 +272,21 @@ class AppointmentTest extends TestCase
 
     public function test_can_add_treatment_to_appointment(): void
     {
-        $treatment = Treatment::factory()->create();
+        $treatment = Treatment::create([
+            'name' => 'Consultation',
+            'price' => 100,
+            'duration' => 30
+        ]);
         
-        $appointment = Appointment::factory()->create([
+        $appointment = Appointment::create([
             'user_id' => $this->dentist->id,
             'patient_id' => $this->patient->id,
+            'appointment_date' => Carbon::tomorrow()->format('Y-m-d'),
+            'start_time' => '09:00',
+            'end_time' => '09:30',
+            'starts_at' => Carbon::tomorrow()->setTime(9, 0),
+            'ends_at' => Carbon::tomorrow()->setTime(9, 30),
+            'status' => 'confirmed',
         ]);
 
         $response = $this->actingAs($this->admin)
